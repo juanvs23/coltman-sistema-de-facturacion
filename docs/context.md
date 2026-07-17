@@ -70,3 +70,30 @@ Based on Cal.com design tokens (via getdesign.md) with these adaptations:
 - **Screaming Architecture**: Business domains, not technical layers
 - **Offline-first**: System must function fully without internet
 - **Keyboard-first**: POS operations should be efficient without mouse
+
+## Current State (v0.1.0)
+
+**Commit**: `bb10315` — Initial project setup
+**Branch**: `master`
+**Date**: 2026-07-17
+
+### Completed
+- [x] Project structure and tooling (Electron + TS + React + Prisma + SQLite)
+- [x] Prisma schema with all domain models
+- [x] Core ports/interfaces for all domains
+- [x] IPC handler scaffold
+- [x] Authentication UI (login page with dark mode)
+- [x] POS shell layout (sidebar + top nav)
+- [x] Design system (Cal.com + dark mode + POS adaptations)
+- [x] TDD config (Vitest + React Testing Library)
+- [x] SDD initialization + skill registry
+- [x] Documentation (README, CHANGELOG, context, roadmap)
+
+### Pending (Next Session)
+- [ ] `npm install` and verify project builds
+- [ ] Core entities implementation
+- [ ] Prisma adapter (repositories)
+- [ ] Auth use case (login with bcrypt)
+- [ ] First TDD cycle: auth flow tests
+- [ ] Product CRUD use case
+- [ ] POS screen implementation
