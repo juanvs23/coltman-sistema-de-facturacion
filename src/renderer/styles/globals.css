@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400 700;
+    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  }
+
+  :root {
+    /* Cal.com light palette */
+    --color-primary: #111111;
+    --color-primary-active: #242424;
+    --color-primary-disabled: #e5e7eb;
+    --color-ink: #111111;
+    --color-body: #374151;
+    --color-muted: #6b7280;
+    --color-muted-soft: #898989;
+    --color-hairline: #e5e7eb;
+    --color-hairline-soft: #f3f4f6;
+    --color-canvas: #ffffff;
+    --color-surface-soft: #f8f9fa;
+    --color-surface-card: #f5f5f5;
+    --color-surface-strong: #e5e7eb;
+    --color-on-primary: #ffffff;
+    --color-accent: #3b82f6;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+  }
+
+  .dark {
+    /* Dark mode palette */
+    --color-primary: #f5f5f5;
+    --color-primary-active: #e5e7eb;
+    --color-primary-disabled: #333333;
+    --color-ink: #f5f5f5;
+    --color-body: #d1d5db;
+    --color-muted: #9ca3af;
+    --color-muted-soft: #6b7280;
+    --color-hairline: #333333;
+    --color-hairline-soft: #2a2a2a;
+    --color-canvas: #0a0a0a;
+    --color-surface-soft: #222222;
+    --color-surface-card: #1a1a1a;
+    --color-surface-strong: #2a2a2a;
+    --color-on-primary: #0a0a0a;
+    --color-accent: #60a5fa;
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-error: #f87171;
+  }
+
+  html {
+    @apply antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply m-0 p-0;
+    background-color: var(--color-canvas);
+    color: var(--color-body);
+  }
+
+  /* POS Keyboard-first: show focus outlines only for keyboard users */
+  body:not(.using-mouse) :focus {
+    @apply outline-2 outline-offset-2;
+    outline-color: var(--color-accent);
+  }
+
+  body.using-mouse :focus {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  .pos-keypad {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .pos-keypad button {
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-muted) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--color-muted);
+    border-radius: 9999px;
+  }
+}

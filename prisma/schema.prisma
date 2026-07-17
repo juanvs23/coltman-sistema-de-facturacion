@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users & Auth ────────────────────────────────────────────
+
+enum Role {
+  SELLER
+  ADMIN
+  SUPERADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String   // bcrypt hash
+  fullName  String
+  role      Role     @default(SELLER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales     Sale[]
+  movements CashMovement[]
+}
+
+// ─── Products & Inventory ────────────────────────────────────
+
+enum ProductType {
+  PRODUCT       // Producto físico con inventario
+  SERVICE       // Servicio sin control de inventario
+  COMBO         // Paquete de productos/servicios
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  code        String      @unique // SKU o código interno
+  name        String
+  description String?
+  type        ProductType @default(PRODUCT)
+  price       Float       // Precio en moneda local
+  priceUsd    Float?      // Precio referencial en USD
+  cost        Float?      // Costo (para margen de ganancia)
+  stock       Int         @default(0)
+  taxRate     Float       @default(16.0) // IVA porcentaje
+  active      Boolean     @default(true)
+  categoryId  String?
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  saleItems SaleItem[]
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  color    String?   // Para badges y organización visual
+  products Product[]
+}
+
+// ─── Sales & Transactions ────────────────────────────────────
+
+enum SaleStatus {
+  ACTIVE        // En curso (carrito abierto)
+  COMPLETED     // Cobrada exitosamente
+  CANCELLED     // Anulada
+  REFUNDED      // Reembolsada
+}
+
+enum PaymentMethod {
+  CASH          // Efectivo
+  TRANSFER      // Transferencia/Pago Móvil
+  DEBIT_CARD    // Débito
+  CREDIT_CARD   // Crédito
+  DIVISA        // Divisas (USD, EUR)
+  MIXED         // Mixto
+}
+
+model Sale {
+  id              String      @id @default(uuid())
+  receiptNumber   Int         @unique // Número de factura correlativo
+  status          SaleStatus  @default(ACTIVE)
+  subtotal        Float       // Suma de items sin IVA
+  taxTotal        Float       // Suma de IVA
+  discount        Float       @default(0)
+  total           Float       // Monto final
+  paymentMethod   PaymentMethod
+  cashAmount      Float?      // Monto en efectivo (para vueltos)
+  changeAmount    Float?      // Vuelto
+  usdRate         Float?      // Tasa del dólar al momento de la venta
+  notes           String?
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  createdAt       DateTime    @default(now())
+  cancelledAt     DateTime?
+  cancelledById   String?
+  cancelledBy     User?       @relation("CancelledSale", fields: [cancelledById], references: [id])
+
+  items SaleItem[]
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  price     Float   // Precio unitario al momento de la venta
+  subtotal  Float   // quantity * price
+  taxRate   Float   @default(16.0)
+  taxAmount Float
+  total     Float   // subtotal + taxAmount
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id])
+
+  @@index([saleId])
+}
+
+// ─── Cash Register (Arqueo de Caja) ──────────────────────────
+
+enum CashMovementType {
+  OPENING       // Apertura de caja
+  INCOME       // Ingreso extra
+  EXPENSE      // Gasto
+  WITHDRAWAL   // Retiro
+  CLOSING      // Cierre de caja
+}
+
+model CashRegister {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  openingBalance Float @default(0) // Saldo inicial
+  closingBalance Float? // Saldo al cierre
+  closedAt    DateTime?
+  closedById  String?
+  closedBy    User?    @relation(fields: [closedById], references: [id])
+  createdAt   DateTime @default(now())
+
+  movements CashMovement[]
+}
+
+model CashMovement {
+  id          String            @id @default(uuid())
+  type        CashMovementType
+  amount      Float
+  description String?
+  reference   String?           // Número de referencia si aplica
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  registerId  String
+  register    CashRegister      @relation(fields: [registerId], references: [id])
+  saleId      String?
+  createdAt   DateTime          @default(now())
+
+  @@index([registerId])
+}
+
+// ─── Fiscal & Configuration ──────────────────────────────────
+
+model FiscalConfig {
+  id               String @id @default("default")
+  printerType      String // "bixolon", "epson", "sharp", "sam4s"
+  printerPort      String // Puerto COM, USB, etc.
+  printerEnabled   Boolean @default(false)
+  taxPayerId       String? // RIF
+  businessName     String? // Razón social
+  fiscalAddress    String?
+  seniatEnabled    Boolean @default(false)
+  autoSendSeniat   Boolean @default(false)
+  updatedAt        DateTime @updatedAt
+}
+
+model AppConfig {
+  id              String  @id @default("default")
+  currencySymbol  String  @default("Bs.")
+  usdRate         Float   @default(0) // Tasa BCV actual
+  usdRateSource   String  @default("bcv") // bcv, enparalelo, criptodolar
+  usdAutoUpdate   Boolean @default(false)
+  receiptFooter   String?
+  taxRateDefault  Float   @default(16.0)
+  lowStockThreshold Int   @default(10)
+  darkMode        Boolean @default(false)
+  updatedAt       DateTime @updatedAt
+}
