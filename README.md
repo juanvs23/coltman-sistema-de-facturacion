@@ -82,13 +82,15 @@ npm run prisma:seed
 npm run dev
 ```
 
-**Seed — usuarios por defecto:**
+**Seed — usuarios por defecto (solo desarrollo):**
 
 | Usuario | Contraseña | Rol |
 |---|---|---|
 | `admin` | `admin123` | SUPERADMIN |
 | `vendedor1` | `admin123` | SELLER |
 | `vendedor2` | `admin123` | SELLER |
+
+> ⚠️ **Advertencia**: estos usuarios se crean únicamente para desarrollo y pruebas. En producción, elimínelos o cambie todas las contraseñas inmediatamente después del primer despliegue. El proyecto no se hace responsable por accesos no autorizados derivados del uso de estas credenciales predeterminadas.
 
 ## Workflow
 
