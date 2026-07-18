@@ -1,5 +1,12 @@
 # Project Context — Sistema de Facturación
 
+## Language (IA)
+
+- **En chat con el usuario**: español neutro, sin modismos regionales (ni rioplatense, ni venezolano, ni mexicano)
+- **En documentación y README**: español neutro o inglés técnico según contexto
+- **En código, commits, UI labels**: inglés
+- No usar voseo, ni "che", ni "pana", ni "vale", ni "wey", ni regionalismos de ningún país
+
 ## Overview
 
 POS and invoicing system for Venezuelan SMEs. Desktop application built with Electron + TypeScript + React + Prisma + SQLite. Designed for offline-first operation with future migration to client-server multi-terminal architecture.

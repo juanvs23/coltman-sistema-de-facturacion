@@ -116,7 +116,7 @@ Ver [roadmap completo](docs/roadmap.md) y [CHANGELOG](docs/CHANGELOG.md).
 
 ## Plugins
 
-Construí tu propio plugin para el POS:
+Crea tu propio plugin para el POS:
 
 ```bash
 npm install @sistema-facturacion/plugin-api
