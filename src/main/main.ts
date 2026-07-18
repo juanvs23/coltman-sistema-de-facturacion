@@ -1,6 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { LicenseManager } from './core/license/LicenseManager'
+import { PluginLoader } from './plugins/PluginLoader'
 import { registerIpcHandlers } from './ipc/handlers'
+
+export const licenseManager = new LicenseManager()
+export const pluginLoader = new PluginLoader(licenseManager)
 
 let mainWindow: BrowserWindow | null = null
 
@@ -31,8 +36,9 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
-  registerIpcHandlers()
+app.whenReady().then(async () => {
+  registerIpcHandlers({ pluginLoader })
+  await pluginLoader.loadPlugins()
   createWindow()
 
   app.on('activate', () => {

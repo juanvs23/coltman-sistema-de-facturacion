@@ -1,0 +1,15 @@
+- generic [ref=f3e3]:
+  - button "Alternar modo oscuro" [ref=f3e4] [cursor=pointer]
+  - generic [ref=f3e7]:
+    - generic [ref=f3e8]:
+      - generic [ref=f3e9]: SF
+      - heading "Sistema de Facturación" [level=1] [ref=f3e11]
+      - paragraph [ref=f3e12]: Inicie sesión para continuar
+    - generic [ref=f3e13]:
+      - generic [ref=f3e14]:
+        - generic [ref=f3e15]: Usuario
+        - textbox "Ingrese su usuario" [active] [ref=f3e16]
+      - generic [ref=f3e17]:
+        - generic [ref=f3e18]: Contraseña
+        - textbox "Ingrese su contraseña" [ref=f3e19]
+      - button "Entrar" [disabled] [ref=f3e20]

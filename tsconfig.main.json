@@ -5,7 +5,6 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022"],
     "outDir": "./dist/main",
-    "rootDir": "./src/main",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -17,9 +16,11 @@
     "baseUrl": ".",
     "paths": {
       "@main/*": ["./src/main/*"],
-      "@shared/*": ["./src/shared/*"]
+      "@shared/*": ["./src/shared/*"],
+      "@plugin-api": ["./plugin-api/src"],
+      "@plugin-api/*": ["./plugin-api/src/*"]
     }
   },
-  "include": ["src/main/**/*.ts", "src/shared/**/*.ts"],
+  "include": ["src/main/**/*.ts", "src/shared/**/*.ts", "plugin-api/src/**/*.ts"],
   "exclude": ["node_modules"]
 }

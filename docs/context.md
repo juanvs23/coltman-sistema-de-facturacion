@@ -38,6 +38,17 @@ Based on Cal.com design tokens (via getdesign.md) with these adaptations:
 - **Keyboard-first**: F2/F4/F6 shortcuts for POS operations
 - **Typography**: Inter (body), Cal Sans (display), JetBrains Mono (code/receipts)
 
+## Open-Core Architecture
+
+El proyecto es **open-core**:
+- **Core POS** (`sistema-facturacion/`): público, licencia MIT
+- **Plugin API** (`plugin-api/`): pública, para que cualquiera construya plugins
+- **Plugin Loader**: público, carga plugins dinámicamente desde `plugins/`
+- **License Manager**: público (código visible), pero la generación de llaves es un backend privado
+- **Plugins premium** (fiscal printer, SENIAT, restaurant): privados, distribuidos bajo licencia
+
+El License Manager es auditable. La seguridad está en el backend de licencias (firma asimétrica), no en esconder el código.
+
 ## Key Design Decisions
 
 | Decision | Rationale |
@@ -47,6 +58,7 @@ Based on Cal.com design tokens (via getdesign.md) with these adaptations:
 | IPC over HTTP (main↔renderer) | Lower latency, no serialization overhead, native Electron pattern |
 | CSS variables for dark mode | Cleaner than Tailwind dark: variants, runtime swappable |
 | Atomic Design + Screaming | Modular, domain-isolated, plugin-friendly frontend |
+| Open-core (public MIT + private plugins) | Community contributions + monetization of complex features |
 
 ## Freemium Model
 
@@ -71,29 +83,34 @@ Based on Cal.com design tokens (via getdesign.md) with these adaptations:
 - **Offline-first**: System must function fully without internet
 - **Keyboard-first**: POS operations should be efficient without mouse
 
-## Current State (v0.1.0)
+## Current State (v0.1.1)
 
-**Commit**: `bb10315` — Initial project setup
 **Branch**: `master`
-**Date**: 2026-07-17
+**Date**: 2026-07-18
 
 ### Completed
 - [x] Project structure and tooling (Electron + TS + React + Prisma + SQLite)
-- [x] Prisma schema with all domain models
+- [x] Prisma schema with all domain models + fixed inverse relations
 - [x] Core ports/interfaces for all domains
-- [x] IPC handler scaffold
+- [x] Auth: login handler real (Prisma + bcrypt) + dev mock for browser
 - [x] Authentication UI (login page with dark mode)
-- [x] POS shell layout (sidebar + top nav)
+- [x] POS shell layout (sidebar + top nav + iconos Icomoon)
 - [x] Design system (Cal.com + dark mode + POS adaptations)
 - [x] TDD config (Vitest + React Testing Library)
 - [x] SDD initialization + skill registry
 - [x] Documentation (README, CHANGELOG, context, roadmap)
+- [x] Dependencies installed (npm install)
+- [x] electron-vite config con entry points explícitos
+- [x] Base de datos SQLite creada y seed ejecutado (3 users, 22 products)
+- [x] Tipografía Inter self-hosted (@fontsource)
+- [x] CSP y favicon arreglados
 
-### Pending (Next Session)
-- [ ] `npm install` and verify project builds
-- [ ] Core entities implementation
-- [ ] Prisma adapter (repositories)
-- [ ] Auth use case (login with bcrypt)
-- [ ] First TDD cycle: auth flow tests
-- [ ] Product CRUD use case
-- [ ] POS screen implementation
+### Pending (Priorizado)
+- [ ] **Router de navegación** — menú lateral inactivo (próximo a implementar)
+- [ ] CRUD de productos
+- [ ] Pantalla POS (carrito + búsqueda)
+- [ ] Modal de cobro
+- [ ] Arqueo de caja
+- [ ] Historial de ventas
+- [ ] Reportes
+- [ ] Admin de usuarios

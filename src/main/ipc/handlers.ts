@@ -1,14 +1,44 @@
 import { ipcMain } from 'electron'
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+import type { PluginLoader } from '../plugins/PluginLoader'
+
+const prisma = new PrismaClient()
 
 /**
  * Registra todos los manejadores IPC.
- * Los casos de uso se inyectarán aquí cuando estén implementados.
  */
-export function registerIpcHandlers(): void {
+export function registerIpcHandlers(deps: {
+  pluginLoader: PluginLoader
+}): void {
   // ─── Auth ────────────────────────────────────────────────
-  ipcMain.handle('auth:login', async (_event, credentials) => {
-    // TODO: Implement with real auth service
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('auth:login', async (_event, credentials: { username: string; password: string }) => {
+    try {
+      const user = await prisma.user.findUnique({ where: { username: credentials.username } })
+      if (!user) {
+        return { success: false, error: 'Usuario o contraseña incorrectos' }
+      }
+      if (!user.active) {
+        return { success: false, error: 'Usuario inactivo' }
+      }
+      const valid = await bcrypt.compare(credentials.password, user.password)
+      if (!valid) {
+        return { success: false, error: 'Usuario o contraseña incorrectos' }
+      }
+      return {
+        success: true,
+        data: {
+          userId: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          loggedAt: new Date().toISOString()
+        }
+      }
+    } catch (error) {
+      console.error('auth:login error:', error)
+      return { success: false, error: 'Error interno del servidor' }
+    }
   })
 
   ipcMain.handle('auth:logout', async () => {
@@ -83,10 +113,16 @@ export function registerIpcHandlers(): void {
 
   // ─── Plugins ─────────────────────────────────────────────
   ipcMain.handle('plugins:list', async () => {
-    return { success: false, data: [] }
+    try {
+      const plugins = await deps.pluginLoader.listPlugins()
+      return { success: true, data: plugins }
+    } catch (error) {
+      return { success: false, error: 'Error al listar plugins' }
+    }
   })
 
-  ipcMain.handle('plugins:install', async (_event, source) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('plugins:install', async (_event, source: string) => {
+    const result = await deps.pluginLoader.installPlugin(source)
+    return result
   })
 }

@@ -1,5 +1,6 @@
 import { useAuth } from '../../shared/hooks/useAuth'
 import { useTheme } from '../../shared/hooks/useTheme'
+import { ImCart, ImBoxAdd, ImFileText2, ImCoinDollar, ImStatsBars, ImCog } from 'react-icons/im'
 
 export default function PosPage(): JSX.Element {
   const { session, logout } = useAuth()
@@ -60,19 +61,19 @@ export default function PosPage(): JSX.Element {
         <nav className="w-56 shrink-0 border-r border-hairline bg-surface-soft p-3">
           <div className="flex flex-col gap-1">
             {[
-              { label: 'Punto de Venta', icon: '💰', id: 'pos' },
-              { label: 'Inventario', icon: '📦', id: 'inventory' },
-              { label: 'Facturación', icon: '🧾', id: 'invoices' },
-              { label: 'Caja', icon: '💵', id: 'cash' },
-              { label: 'Reportes', icon: '📊', id: 'reports' },
-              { label: 'Admin', icon: '⚙️', id: 'admin' }
+              { label: 'Punto de Venta', icon: ImCart, id: 'pos' },
+              { label: 'Inventario', icon: ImBoxAdd, id: 'inventory' },
+              { label: 'Facturación', icon: ImFileText2, id: 'invoices' },
+              { label: 'Caja', icon: ImCoinDollar, id: 'cash' },
+              { label: 'Reportes', icon: ImStatsBars, id: 'reports' },
+              { label: 'Admin', icon: ImCog, id: 'admin' }
             ].map((item) => (
               <button
                 key={item.id}
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-body-sm text-muted
                   transition-colors hover:bg-surface-card hover:text-ink"
               >
-                <span className="text-base">{item.icon}</span>
+                <item.icon className="h-4 w-4" />
                 {item.label}
               </button>
             ))}

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.1] - 2026-07-18
+
+### Added
+- **Open-core architecture**: `plugin-api/` público con 5 contratos (IPlugin, IFiscalPrinter, IUsdRateProvider, IRestaurant, ISeniat)
+- License Manager con feature gating (free/premium/enterprise) y machine binding
+- Plugin Loader dinámico con carga desde directorios + dispatch de hooks
+- Licencia MIT para el core público
+- Seed de base de datos (`prisma/seed.ts`) con datos iniciales: 3 usuarios, 5 categorías, 22 productos, configuración fiscal y de app
+- Dev mock de `electronAPI` para desarrollo desde navegador
+- `react-icons` con set Icomoon (`react-icons/im`, prefijo `Im`)
+
+### Fixed
+- Handler IPC `auth:login` implementado con Prisma + bcrypt (validación real contra DB)
+- Content-Security-Policy bloqueaba carga de Google Fonts — migrado a `@fontsource/inter` self-hosted
+- Favicon faltante causaba 404 — agregado favicon inline SVG
+
+### Changed
+- Dependencias de proyecto instaladas (npm install)
+- Schema Prisma: corregidas relaciones inversas faltantes en modelo User
+- Configuración electron-vite: agregados entry points explícitos y outDir, corregido root del renderer
+
 ## [0.1.0] - 2026-07-17
 
 ### Added
