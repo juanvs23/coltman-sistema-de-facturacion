@@ -31,3 +31,6 @@ logs/
 
 # Prisma
 prisma/migrations/
+
+# Playwright test artifacts
+.playwright-mcp/
