@@ -83,6 +83,13 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Offline-first**: System must function fully without internet
 - **Keyboard-first**: POS operations should be efficient without mouse
 
+## Workflow
+
+- **Rama activa**: `dev` — todo el trabajo se hace aquí
+- **Rama estable**: `master` — solo merge desde `dev` cuando está probado
+- **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
+- **TDD**: tests antes que implementación
+
 ## Current State (v0.1.1)
 
 **Branch**: `master`
