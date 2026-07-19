@@ -41,6 +41,12 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
             <span className="text-muted">Subtotal</span>
             <span className="text-ink">Bs. {sale.subtotal.toFixed(2)}</span>
           </div>
+          {sale.discount > 0 && (
+            <div className="flex justify-between text-body-sm">
+              <span className="text-success">Descuento</span>
+              <span className="text-success">−Bs. {sale.discount.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-body-sm">
             <span className="text-muted">IVA</span>
             <span className="text-ink">Bs. {sale.taxTotal.toFixed(2)}</span>
@@ -53,6 +59,11 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
             <div className="flex justify-between text-caption text-muted-soft">
               <span>USD</span>
               <span>${(sale.total / sale.usdRate).toFixed(2)}</span>
+            </div>
+          )}
+          {'notes' in sale && (sale as { notes?: string }).notes && (
+            <div className="flex justify-between text-caption text-muted-soft pt-1 border-t border-hairline mt-1">
+              <span>{(sale as { notes: string }).notes}</span>
             </div>
           )}
         </div>

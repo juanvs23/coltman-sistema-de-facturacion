@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useCountry } from '@renderer/shared/hooks/useCountry'
 import type { DocumentType } from '@shared/types'
 import type { CartEntry } from '../organisms/ShoppingCart'
+import { calcCartTotals } from '../molecules/calcCartTotals'
 
 interface PaymentModalProps {
   entries: CartEntry[]
   usdRate: number
   documentType: DocumentType
   customerId?: string
+  globalDiscount: number
   onConfirm: (data: PaymentData) => Promise<void>
   onCancel: () => void
 }
@@ -15,26 +17,24 @@ interface PaymentModalProps {
 export interface PaymentData {
   paymentMethod: string
   cashAmount?: number
+  globalDiscount?: number
+  notes?: string
 }
 
-export default function PaymentModal({ entries, usdRate, documentType, customerId, onConfirm, onCancel }: PaymentModalProps): JSX.Element {
+export default function PaymentModal({ entries, usdRate, documentType, customerId, globalDiscount, onConfirm, onCancel }: PaymentModalProps): JSX.Element {
   const [method, setMethod] = useState('CASH')
   const [cashAmount, setCashAmount] = useState('')
+  const [discount, setDiscount] = useState(String(globalDiscount || ''))
+  const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const isFactura = documentType === 'FACTURA'
 
-  // Calculate totals
-  const subtotalUsd = entries.reduce((sum, e) => sum + e.product.priceUsd * e.quantity, 0)
-  const taxTotalUsd = entries.reduce((sum, e) => {
-    const totalRate = (e.product.taxes ?? []).reduce((s, pt) => s + (pt.tax?.rate ?? 0), 0)
-    return sum + (e.product.priceUsd * e.quantity * totalRate) / 100
-  }, 0)
-  const totalUsd = subtotalUsd + taxTotalUsd
+  const discountNum = parseFloat(discount) || 0
+  const { subtotalUsd, taxTotalUsd, discountTotalUsd, totalUsd } = calcCartTotals(entries, discountNum)
   const totalBs = totalUsd * usdRate
 
   const cashNum = parseFloat(cashAmount) || 0
-  const cashUsd = method === 'DIVISA' ? cashNum : cashNum / usdRate
   const changeUsd = method === 'CASH' ? cashNum - totalUsd : 0
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -55,7 +55,9 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
     try {
       await onConfirm({
         paymentMethod: method,
-        cashAmount: method === 'CASH' || method === 'DIVISA' ? cashNum : undefined
+        cashAmount: method === 'CASH' || method === 'DIVISA' ? cashNum : undefined,
+        globalDiscount: discountNum > 0 ? discountNum : undefined,
+        notes: notes.trim() || undefined
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar el pago')
@@ -92,6 +94,11 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
             <div className="flex justify-between text-body-sm">
               <span className="text-muted">Subtotal</span><span className="text-ink">${subtotalUsd.toFixed(2)}</span>
             </div>
+            {discountTotalUsd > 0 && (
+              <div className="flex justify-between text-body-sm">
+                <span className="text-success">Descuento</span><span className="text-success">−${discountTotalUsd.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-body-sm">
               <span className="text-muted">Impuestos</span><span className="text-ink">${taxTotalUsd.toFixed(2)}</span>
             </div>
@@ -150,13 +157,33 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
                   Vuelto: ${changeUsd.toFixed(2)} (Bs. {(changeUsd * usdRate).toFixed(2)})
                 </p>
               )}
-              {method === 'DIVISA' && (
-                <p className="text-caption text-muted-soft">
-                  Equivale a Bs. {(cashNum * usdRate).toFixed(2)}
-                </p>
-              )}
             </div>
           )}
+
+          {/* Global discount */}
+          <div className="flex flex-col gap-1">
+            <label className="text-caption text-muted">Descuento global (USD)</label>
+            <input
+              type="number" step="0.01" min="0" value={discount}
+              onChange={e => setDiscount(e.target.value)}
+              className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink
+                focus:border-primary focus:outline-none"
+              placeholder="0.00"
+            />
+          </div>
+
+          {/* Notes */}
+          <div className="flex flex-col gap-1">
+            <label className="text-caption text-muted">Notas</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={2}
+              className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink
+                placeholder:text-muted-soft focus:border-primary focus:outline-none resize-none"
+              placeholder="Referencia de pago, observaciones..."
+            />
+          </div>
 
           <div className="flex gap-2 mt-auto">
             <button type="button" onClick={onCancel} disabled={saving}

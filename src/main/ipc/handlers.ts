@@ -240,11 +240,13 @@ export function registerIpcHandlers(deps: {
 
   // ─── Sales ───────────────────────────────────────────────
   ipcMain.handle('sales:create', async (_event, input: {
-    items: Array<{ productId: string; quantity: number; priceUsd: number }>
+    items: Array<{ productId: string; quantity: number; priceUsd: number; discount?: number }>
     documentType: string
     paymentMethod: string
     cashAmount?: number
+    discount?: number
     usdRate?: number
+    notes?: string
     userId: string
     customerId?: string
   }) => {
@@ -267,8 +269,9 @@ export function registerIpcHandlers(deps: {
       // Calculate totals and build sale items
       let subtotalUsd = 0
       let taxTotalUsd = 0
+      let discountTotalUsd = 0
       const saleItemsData: Array<{
-        quantity: number; price: number; priceUsd: number; subtotal: number
+        quantity: number; price: number; priceUsd: number; discount: number; subtotal: number
         taxRate: number; taxAmount: number; taxBreakdown: string; total: number
         productId: string
       }> = []
@@ -286,10 +289,13 @@ export function registerIpcHandlers(deps: {
         }
 
         const priceUsd = item.priceUsd
+        const lineDiscountUsd = item.discount ?? 0
         const priceBs = priceUsd * rate
-        const itemSubtotalUsd = priceUsd * item.quantity
+        const itemSubtotalUsd = (priceUsd * item.quantity) - lineDiscountUsd
 
-        // Calculate taxes from product tax associations
+        discountTotalUsd += lineDiscountUsd
+
+        // Calculate taxes from product tax associations (on discounted subtotal)
         const taxBreakdown: Array<{ taxId: string; name: string; rate: number; amount: number }> = []
         let combinedRate = 0
 
@@ -316,7 +322,8 @@ export function registerIpcHandlers(deps: {
           quantity: item.quantity,
           price: priceBs,
           priceUsd,
-          subtotal: priceBs * item.quantity,
+          discount: lineDiscountUsd,
+          subtotal: itemSubtotalUsd * rate,
           taxRate: combinedRate,
           taxAmount: itemTaxUsd * rate,
           taxBreakdown: JSON.stringify(taxBreakdown),
@@ -325,7 +332,9 @@ export function registerIpcHandlers(deps: {
         })
       }
 
-      const totalUsd = subtotalUsd + taxTotalUsd
+      // Apply global discount after taxes (VE fiscal rule)
+      const globalDiscountUsd = input.discount ?? 0
+      const totalUsd = subtotalUsd + taxTotalUsd - globalDiscountUsd
 
       // Create sale in a transaction
       const sale = await prisma.$transaction(async (tx) => {
@@ -337,10 +346,12 @@ export function registerIpcHandlers(deps: {
             status: 'COMPLETED',
             subtotal: subtotalUsd * rate,
             taxTotal: taxTotalUsd * rate,
+            discount: discountTotalUsd + globalDiscountUsd,
             total: totalUsd * rate,
             paymentMethod: input.paymentMethod as never,
             cashAmount: input.cashAmount ? input.cashAmount * rate : null,
             usdRate: rate,
+            notes: input.notes ?? null,
             userId: input.userId,
             customerId: input.customerId ?? null,
             items: {

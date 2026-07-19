@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0] - 2026-07-19
+
+### Added
+- **Descuento por línea**: Porcentaje de descuento en cada producto del carrito, aplicado antes de IVA
+- **Descuento global**: Monto fijo en pantalla de cobro, aplicado después de IVA (regla fiscal VE)
+- **Notas y referencias**: Campo de texto libre en PaymentModal, almacenado en Sale.notes, visible en recibo
+- **calcCartTotals**: Helper compartido que elimina duplicación de cálculo entre CartSummary y PaymentModal
+- **F5 (Descuento) y F9 (Nota)** habilitados en ShortcutBar
+- SaleItem.discount agregado al schema Prisma
+
+### Changed
+- CartItem: muestra % de descuento editable por línea, total recalculado en tiempo real
+- CartSummary: muestra línea de descuento, usa calcCartTotals
+- PaymentModal: inputs de descuento global + notas, cálculo unificado
+- ReceiptConfirm: muestra descuento y notas cuando existen
+- sales:create handler: acepta per-line discount, global discount, y notes
+
 ## [0.5.0] - 2026-07-19
 
 ### Added

@@ -160,7 +160,8 @@ model SaleItem {
   quantity     Int
   price        Float   // Precio unitario en moneda local al momento de la venta
   priceUsd     Float?  // Precio unitario en USD al momento de la venta
-  subtotal     Float   // quantity * price
+  discount     Float   @default(0) // Descuento por línea en USD
+  subtotal     Float   // (quantity * price) - discount
   taxRate      Float   @default(16.0) // Tasa combinada de impuestos
   taxAmount    Float   // Suma total de impuestos
   taxBreakdown String? // JSON con desglose: [{"taxId":"...","name":"IVA 16%","rate":16,"amount":1.28}]

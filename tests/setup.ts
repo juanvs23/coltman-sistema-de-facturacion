@@ -20,7 +20,7 @@ window.electronAPI = {
   createSale: async () => ({ success: true, data: {
     id: 'mock', receiptNumber: 1, documentType: 'TICKET', status: 'COMPLETED', subtotal: 100, taxTotal: 16,
     discount: 0, total: 116, paymentMethod: 'CASH', usdRate: 50, userId: '1',
-    customerId: null, customer: null, items: [], createdAt: new Date().toISOString()
+    customerId: null, customer: null, items: [], notes: null, createdAt: new Date().toISOString()
   } }),
   listSales: async () => ({ success: false, error: 'Mock: Not implemented' }),
   cancelSale: async () => ({ success: false, error: 'Mock: Not implemented' }),

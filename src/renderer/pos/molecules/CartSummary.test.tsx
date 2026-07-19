@@ -23,13 +23,13 @@ describe('CartSummary', () => {
   })
 
   it('calculates totals correctly without taxes', () => {
-    render(<CartSummary entries={[{ product: PRODUCT, quantity: 2 }]} usdRate={50} />)
+    render(<CartSummary entries={[{ product: PRODUCT, quantity: 2, discount: 0 }]} usdRate={50} />)
     const subtotals = screen.getAllByText('$20.00')
     expect(subtotals.length).toBeGreaterThanOrEqual(1) // subtotal and total
   })
 
   it('calculates taxes correctly', () => {
-    render(<CartSummary entries={[{ product: PRODUCT_WITH_TAX, quantity: 1 }]} usdRate={50} />)
+    render(<CartSummary entries={[{ product: PRODUCT_WITH_TAX, quantity: 1, discount: 0 }]} usdRate={50} />)
     expect(screen.getByText('$100.00')).toBeInTheDocument() // subtotal
     expect(screen.getByText('$16.00')).toBeInTheDocument()  // tax (16%)
   })

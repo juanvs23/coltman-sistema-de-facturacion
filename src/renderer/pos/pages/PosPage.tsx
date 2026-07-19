@@ -25,6 +25,7 @@ export default function PosPage(): JSX.Element {
   const [lastSale, setLastSale] = useState<Sale | null>(null)
   const [documentType, setDocumentType] = useState<DocumentType>('TICKET')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [globalDiscount, setGlobalDiscount] = useState(0)
 
   const isModalOpen = showPayment || lastSale !== null
 
@@ -69,6 +70,7 @@ export default function PosPage(): JSX.Element {
   const handleShortcut = (key: string): void => {
     if (key === 'F2') setFocusKey(k => k + 1)
     if (key === 'F4' && entries.length > 0) setShowPayment(true)
+    if (key === 'F9' && entries.length > 0) setShowPayment(true)
   }
 
   const handleSelectProduct = (product: Product): void => {
@@ -81,7 +83,7 @@ export default function PosPage(): JSX.Element {
             : e
         )
       }
-      return [...prev, { product, quantity: 1 }]
+      return [...prev, { product, quantity: 1, discount: 0 }]
     })
   }
 
@@ -97,6 +99,10 @@ export default function PosPage(): JSX.Element {
     setEntries(prev => prev.filter(e => e.product.id !== productId))
   }
 
+  const handleUpdateDiscount = (productId: string, discount: number): void => {
+    setEntries(prev => prev.map(e => (e.product.id === productId ? { ...e, discount } : e)))
+  }
+
   const handleClear = (): void => {
     setEntries([])
   }
@@ -108,12 +114,15 @@ export default function PosPage(): JSX.Element {
       items: entries.map(e => ({
         productId: e.product.id,
         quantity: e.quantity,
-        priceUsd: e.product.priceUsd
+        priceUsd: e.product.priceUsd,
+        discount: e.discount || undefined
       })),
       documentType,
+      discount: data.globalDiscount,
       paymentMethod: data.paymentMethod,
       cashAmount: data.cashAmount,
       usdRate,
+      notes: data.notes,
       userId: session.userId,
       customerId: selectedCustomer?.id
     })
@@ -129,6 +138,7 @@ export default function PosPage(): JSX.Element {
   const handleNewSale = (): void => {
     setLastSale(null)
     setSelectedCustomer(null)
+    setGlobalDiscount(0)
   }
 
   return (
@@ -163,8 +173,10 @@ export default function PosPage(): JSX.Element {
                   usdRate={usdRate}
                   documentType={documentType}
                   selectedCustomer={selectedCustomer}
+                  globalDiscount={globalDiscount}
                   onCustomerChange={setSelectedCustomer}
                   onUpdateQuantity={handleUpdateQuantity}
+                  onUpdateDiscount={handleUpdateDiscount}
                   onRemove={handleRemove}
                   onClear={handleClear}
                   onCheckout={() => setShowPayment(true)}
@@ -184,6 +196,7 @@ export default function PosPage(): JSX.Element {
           usdRate={usdRate}
           documentType={documentType}
           customerId={selectedCustomer?.id}
+          globalDiscount={globalDiscount}
           onConfirm={handleCheckout}
           onCancel={() => setShowPayment(false)}
         />

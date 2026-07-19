@@ -15,27 +15,27 @@ describe('ShortcutBar', () => {
     expect(screen.getByText('Nota')).toBeInTheDocument()
   })
 
-  it('enables F2 and F4 buttons', () => {
+  it('enables F2, F4, F5 and F9 buttons', () => {
     render(<ShortcutBar onShortcut={vi.fn()} />)
     expect(screen.getByRole('button', { name: /buscar/i })).not.toBeDisabled()
     expect(screen.getByRole('button', { name: /cobrar/i })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: /descuento/i })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: /nota/i })).not.toBeDisabled()
   })
 
-  it('disables F5-F9 with Próximamente tooltip', () => {
+  it('disables F1, F6, F7, F8 with Próximamente tooltip', () => {
     render(<ShortcutBar onShortcut={vi.fn()} />)
-    const descuento = screen.getByRole('button', { name: /descuento/i })
-    expect(descuento).toBeDisabled()
-    expect(descuento).toHaveAttribute('title', 'Próximamente')
+    expect(screen.getByRole('button', { name: /ayuda/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /anular/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /retener/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /cliente/i })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /nota/i })).toBeDisabled()
   })
 
-  it('calls onShortcut with F2 when Buscar is clicked', () => {
+  it('calls onShortcut with F5 when Descuento is clicked', () => {
     const onShortcut = vi.fn()
     render(<ShortcutBar onShortcut={onShortcut} />)
-    fireEvent.click(screen.getByRole('button', { name: /buscar/i }))
-    expect(onShortcut).toHaveBeenCalledWith('F2')
+    fireEvent.click(screen.getByRole('button', { name: /descuento/i }))
+    expect(onShortcut).toHaveBeenCalledWith('F5')
   })
 
   it('calls onShortcut with F4 when Cobrar is clicked', () => {
@@ -45,10 +45,10 @@ describe('ShortcutBar', () => {
     expect(onShortcut).toHaveBeenCalledWith('F4')
   })
 
-  it('does not call onShortcut when disabled button is clicked', () => {
+  it('does not call onShortcut when disabled button (F1) is clicked', () => {
     const onShortcut = vi.fn()
     render(<ShortcutBar onShortcut={onShortcut} />)
-    fireEvent.click(screen.getByRole('button', { name: /descuento/i }))
+    fireEvent.click(screen.getByRole('button', { name: /ayuda/i }))
     expect(onShortcut).not.toHaveBeenCalled()
   })
 })

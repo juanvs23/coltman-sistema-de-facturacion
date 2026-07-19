@@ -97,9 +97,9 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.5.0)
+## Current State (v0.6.0)
 
-**Branch**: `feat/pos-ui-redesign` → `feat/factura-vs-ticket` (tracker)
+**Branch**: `dev`
 **Date**: 2026-07-19
 
 ### Completed
@@ -150,13 +150,20 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 ### Completed (v0.5.0 — Fase 1.2)
 - [x] **Rediseño POS**: layout profesional con barcode-first
 - [x] **BarcodeInput**: input grande con autofocus permanente, Enter para agregar producto
-- [x] **ShortcutBar**: barra de atajos F1-F9 visible (F5-F9 disabled con "Próximamente")
+- [x] **ShortcutBar**: barra de atajos F1-F9 visible
 - [x] **N° factura/ticket visible**: correlativo en TopBar durante la transacción
 - [x] **Tasa USD fija**: en el encabezado (TopBar)
 - [x] **getNextReceiptNumber**: handler IPC para preview de correlativo
+
+### Completed (v0.6.0 — Fase 1.3)
+- [x] **Descuento por línea**: porcentaje en cada producto del carrito, aplicado antes de IVA
+- [x] **Descuento global**: monto fijo en pantalla de cobro, aplicado después de IVA
+- [x] **Notas y referencias**: campo de texto libre en PaymentModal, visible en recibo
+- [x] **calcCartTotals**: helper compartido eliminando duplicación CartSummary/PaymentModal
+- [x] **F5 (Descuento) y F9 (Nota)** habilitados en ShortcutBar
 - [x] **62 tests**
 
-### Pending (Fase 1.3+)
+### Pending (Fase 1.4+)
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación

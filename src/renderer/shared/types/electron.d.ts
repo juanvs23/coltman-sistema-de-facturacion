@@ -34,11 +34,13 @@ interface ElectronAPI {
 
   // Sales
   createSale: (sale: {
-    items: Array<{ productId: string; quantity: number; priceUsd: number }>
+    items: Array<{ productId: string; quantity: number; priceUsd: number; discount?: number }>
     documentType: import('@shared/types').DocumentType
     paymentMethod: string
     cashAmount?: number
+    discount?: number
     usdRate: number
+    notes?: string
     userId: string
     customerId?: string
   }) => Promise<IpcResponse<Sale>>

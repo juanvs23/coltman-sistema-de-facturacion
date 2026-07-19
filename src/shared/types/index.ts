@@ -72,6 +72,7 @@ export interface SaleItem {
   quantity: number
   price: number
   priceUsd?: number
+  discount: number
   subtotal: number
   taxRate: number
   taxAmount: number
@@ -121,10 +122,12 @@ export interface CreateSaleRequest {
     quantity: number
     price: number
     priceUsd: number
+    discount?: number
   }>
   documentType: DocumentType
   paymentMethod: Sale['paymentMethod']
   cashAmount?: number
+  discount?: number
   usdRate?: number
   notes?: string
   userId: string

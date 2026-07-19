@@ -9,11 +9,11 @@ const SHORTCUTS: Shortcut[] = [
   { key: 'F1', label: 'Ayuda', enabled: false, tooltip: 'Próximamente' },
   { key: 'F2', label: 'Buscar', enabled: true },
   { key: 'F4', label: 'Cobrar', enabled: true },
-  { key: 'F5', label: 'Descuento', enabled: false, tooltip: 'Próximamente' },
+  { key: 'F5', label: 'Descuento', enabled: true, tooltip: 'Descuentos por línea en el carrito' },
   { key: 'F6', label: 'Anular', enabled: false, tooltip: 'Próximamente' },
   { key: 'F7', label: 'Retener', enabled: false, tooltip: 'Próximamente' },
   { key: 'F8', label: 'Cliente', enabled: false, tooltip: 'Próximamente' },
-  { key: 'F9', label: 'Nota', enabled: false, tooltip: 'Próximamente' }
+  { key: 'F9', label: 'Nota', enabled: true, tooltip: 'Agregar nota en la pantalla de cobro' }
 ]
 
 interface ShortcutBarProps {

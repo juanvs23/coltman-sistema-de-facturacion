@@ -6,6 +6,7 @@ import CustomerSearch from '../molecules/CustomerSearch'
 export interface CartEntry {
   product: Product
   quantity: number
+  discount: number
 }
 
 interface ShoppingCartProps {
@@ -13,16 +14,18 @@ interface ShoppingCartProps {
   usdRate: number
   documentType: DocumentType
   selectedCustomer: Customer | null
+  globalDiscount: number
   onCustomerChange: (customer: Customer | null) => void
   onUpdateQuantity: (productId: string, quantity: number) => void
+  onUpdateDiscount: (productId: string, discount: number) => void
   onRemove: (productId: string) => void
   onClear: () => void
   onCheckout: () => void
 }
 
 export default function ShoppingCart({
-  entries, usdRate, documentType, selectedCustomer, onCustomerChange,
-  onUpdateQuantity, onRemove, onClear, onCheckout
+  entries, usdRate, documentType, selectedCustomer, globalDiscount, onCustomerChange,
+  onUpdateQuantity, onUpdateDiscount, onRemove, onClear, onCheckout
 }: ShoppingCartProps): JSX.Element {
   const isFactura = documentType === 'FACTURA'
 
@@ -71,6 +74,7 @@ export default function ShoppingCart({
               entry={entry}
               usdRate={usdRate}
               onUpdateQuantity={onUpdateQuantity}
+              onUpdateDiscount={onUpdateDiscount}
               onRemove={onRemove}
             />
           ))}
@@ -80,7 +84,7 @@ export default function ShoppingCart({
       {/* Summary + checkout */}
       {entries.length > 0 && (
         <>
-          <CartSummary entries={entries} usdRate={usdRate} />
+          <CartSummary entries={entries} usdRate={usdRate} globalDiscount={globalDiscount} />
           <div className="border-t border-hairline px-4 py-3">
             <button
               onClick={onCheckout}
