@@ -94,25 +94,114 @@ if (!window.electronAPI) {
       success: true,
       data: {
         id: crypto.randomUUID(),
-        receiptNumber: 1,
+        receiptNumber: Math.floor(Math.random() * 9000) + 1000,
+        documentType: input.documentType ?? 'TICKET',
         status: 'COMPLETED',
         subtotal: 100,
         taxTotal: 16,
+        discount: 0,
         total: 116,
-        paymentMethod: input.paymentMethod,
-        usdRate: input.usdRate,
-        userId: input.userId,
+        paymentMethod: input.paymentMethod ?? 'CASH',
+        usdRate: input.usdRate ?? 48.5,
+        notes: input.notes ?? null,
+        userId: input.userId ?? 'mock-id',
         customerId: input.customerId ?? null,
+        customer: input.customerId ? { id: '1', taxId: 'J-12345678-4', name: 'Mi Negocio C.A.', active: true } : null,
         items: [],
         createdAt: new Date().toISOString()
       }
     }),
-    listSales: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    cancelSale: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    openRegister: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    closeRegister: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    getCashSummary: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    getUsdRate: async () => ({ success: false, error: 'No implementado en modo browser' }),
+    listSales: async () => ({
+      success: true,
+      data: [
+        {
+          id: 's1', receiptNumber: 1001, documentType: 'FACTURA', status: 'COMPLETED',
+          subtotal: 80, taxTotal: 12.8, discount: 0, total: 92.8,
+          paymentMethod: 'CASH', usdRate: 48.5, notes: null,
+          userId: '1', user: { id: '1', fullName: 'Administrador Principal' },
+          customerId: '1', customer: { id: '1', taxId: 'J-12345678-4', name: 'Mi Negocio C.A.' },
+          items: [{ id: 'i1', quantity: 2, price: 46.4, priceUsd: 0.25, discount: 0, subtotal: 92.8, taxRate: 16, taxAmount: 12.8, total: 105.6, productId: '1', product: { id: '1', name: 'Producto de prueba' } }],
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 's2', receiptNumber: 1002, documentType: 'TICKET', status: 'COMPLETED',
+          subtotal: 50, taxTotal: 8, discount: 5, total: 53,
+          paymentMethod: 'TRANSFER', usdRate: 48.5, notes: 'Pago móvil',
+          userId: '2', user: { id: '2', fullName: 'Vendedor Uno' },
+          customerId: null, customer: null,
+          items: [{ id: 'i2', quantity: 5, price: 10.6, priceUsd: 0.25, discount: 0, subtotal: 53, taxRate: 16, taxAmount: 8, total: 61, productId: '1', product: { id: '1', name: 'Producto de prueba' } }],
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: 's3', receiptNumber: 1003, documentType: 'FACTURA', status: 'CANCELLED',
+          subtotal: 200, taxTotal: 32, discount: 10, total: 222,
+          paymentMethod: 'DIVISA', usdRate: 49, notes: 'Anulación: Error en monto',
+          userId: '1', user: { id: '1', fullName: 'Administrador Principal' },
+          customerId: '1', customer: { id: '1', taxId: 'J-12345678-4', name: 'Mi Negocio C.A.' },
+          items: [],
+          createdAt: new Date(Date.now() - 7200000).toISOString(),
+          cancelledAt: new Date().toISOString()
+        }
+      ]
+    }),
+    cancelSale: async () => ({ success: true, data: { status: 'CANCELLED' } }),
+    getNextReceiptNumber: async () => ({ success: true, data: 1004 }),
+    openRegister: async () => ({ success: true, data: { id: 'reg-1', openingBalance: 200 } }),
+    closeRegister: async () => ({ success: true }),
+    getCashSummary: async () => ({
+      success: true,
+      data: {
+        register: {
+          id: 'reg-1', openingBalance: 200, closingBalance: null, date: new Date().toISOString(), createdAt: new Date().toISOString(),
+          movements: [
+            { id: 'm1', type: 'OPENING', amount: 200, description: 'Apertura de caja', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } },
+            { id: 'm2', type: 'INCOME', amount: 50, description: 'Ingreso extra', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } }
+          ]
+        },
+        sales: [
+          { paymentMethod: 'CASH', total: 92.8 },
+          { paymentMethod: 'TRANSFER', total: 53 },
+          { paymentMethod: 'CASH', total: 120 }
+        ]
+      }
+    }),
+    addCashMovement: async () => ({ success: true }),
+    getDailyReport: async () => ({
+      success: true,
+      data: { date: new Date().toISOString(), sales: 8, total: 525.5, byMethod: { CASH: 212.8, TRANSFER: 153, DIVISA: 120, count: 8 } }
+    }),
+    getProductReport: async () => ({
+      success: true,
+      data: [
+        { name: 'Producto de prueba', quantity: 25, total: 162.5 },
+        { name: 'Servicio de prueba', quantity: 10, total: 100 },
+        { name: 'Café', quantity: 50, total: 75 }
+      ]
+    }),
+    getUserReport: async () => ({
+      success: true,
+      data: [
+        { name: 'Administrador Principal', sales: 12, total: 380 },
+        { name: 'Vendedor Uno', sales: 5, total: 145.5 }
+      ]
+    }),
+    getIvaReport: async () => ({
+      success: true,
+      data: {
+        period: '2026-07',
+        entries: [
+          { date: new Date().toISOString(), receiptNumber: 1001, customerName: 'Mi Negocio C.A.', customerTaxId: 'J-12345678-4', subtotal: 80, taxTotal: 12.8, total: 92.8, discount: 0 },
+          { date: new Date().toISOString(), receiptNumber: 1004, customerName: 'Juan Pérez', customerTaxId: 'V-87654321-1', subtotal: 45, taxTotal: 7.2, total: 52.2, discount: 0 }
+        ],
+        totals: { subtotal: 125, taxTotal: 20, total: 145, discount: 0 }
+      }
+    }),
+    getCompanyConfig: async () => ({
+      success: true,
+      data: { businessName: 'Mi Negocio C.A.', taxId: 'J-12345678-9', address: 'Av. Principal, Caracas', phone: '+58 212 1234567', email: 'contacto@minegocio.com', logo: '' }
+    }),
+    updateCompanyConfig: async () => ({ success: true, data: { businessName: 'Mi Negocio C.A.' } }),
+    getUsdRate: async () => ({ success: true, data: { rate: 48.50, source: 'bcv' } }),
     getConfig: async () => ({ success: false, error: 'No implementado en modo browser' }),
     updateConfig: async () => ({ success: false, error: 'No implementado en modo browser' }),
     testPrinter: async () => ({ success: false, error: 'No implementado en modo browser' }),
