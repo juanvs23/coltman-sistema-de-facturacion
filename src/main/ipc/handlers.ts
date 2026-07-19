@@ -6,6 +6,16 @@ import type { IUserRepository } from '../core/ports/IUserRepository'
 import type { IProductRepository } from '../core/ports/IProductRepository'
 import type { ICustomerRepository } from '../core/ports/ICustomerRepository'
 
+export function validateSaleInput(input: {
+  documentType: string
+  customerId?: string
+}): { valid: boolean; error?: string } {
+  if (input.documentType === 'FACTURA' && !input.customerId) {
+    return { valid: false, error: 'CUSTOMER_REQUIRED_FOR_FACTURA' }
+  }
+  return { valid: true }
+}
+
 /**
  * Registra todos los manejadores IPC.
  */
@@ -231,6 +241,7 @@ export function registerIpcHandlers(deps: {
   // ─── Sales ───────────────────────────────────────────────
   ipcMain.handle('sales:create', async (_event, input: {
     items: Array<{ productId: string; quantity: number; priceUsd: number }>
+    documentType: string
     paymentMethod: string
     cashAmount?: number
     usdRate?: number
@@ -238,6 +249,12 @@ export function registerIpcHandlers(deps: {
     customerId?: string
   }) => {
     try {
+      // Validate customer required for FACTURA
+      const validation = validateSaleInput({ documentType: input.documentType, customerId: input.customerId })
+      if (!validation.valid) {
+        return { success: false, error: validation.error }
+      }
+
       // Get current USD rate
       const config = await prisma.appConfig.findUnique({ where: { id: 'default' } })
       const rate = input.usdRate ?? config?.usdRate ?? 0
@@ -316,6 +333,7 @@ export function registerIpcHandlers(deps: {
         const created = await tx.sale.create({
           data: {
             receiptNumber,
+            documentType: input.documentType as 'FACTURA' | 'TICKET',
             status: 'COMPLETED',
             subtotal: subtotalUsd * rate,
             taxTotal: taxTotalUsd * rate,
@@ -403,6 +421,34 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       return { success: false, error: 'Error al actualizar configuración' }
+    }
+  })
+
+  // ─── Company Config ───────────────────────────────────────
+  ipcMain.handle('company:get', async () => {
+    try {
+      let config = await prisma.companyConfig.findUnique({ where: { id: 'default' } })
+      if (!config) {
+        config = await prisma.companyConfig.create({
+          data: { id: 'default', businessName: '' }
+        })
+      }
+      return { success: true, data: config }
+    } catch (error) {
+      return { success: false, error: 'Error al obtener datos de la empresa' }
+    }
+  })
+
+  ipcMain.handle('company:update', async (_event, data: Record<string, unknown>) => {
+    try {
+      const config = await prisma.companyConfig.upsert({
+        where: { id: 'default' },
+        create: { id: 'default', businessName: (data.businessName as string) ?? '', ...data },
+        update: data as never
+      })
+      return { success: true, data: config }
+    } catch (error) {
+      return { success: false, error: 'Error al actualizar datos de la empresa' }
     }
   })
 

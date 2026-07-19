@@ -18,8 +18,9 @@ window.electronAPI = {
   createTax: async () => ({ success: true, data: { id: '1', name: 'IVA 16%', rate: 16, active: true } }),
   updateTax: async () => ({ success: true, data: { id: '1', name: 'IVA 16%', rate: 16, active: true } }),
   createSale: async () => ({ success: true, data: {
-    id: 'mock', receiptNumber: 1, status: 'COMPLETED', subtotal: 100, taxTotal: 16, total: 116,
-    paymentMethod: 'CASH', usdRate: 50, userId: '1', customerId: null, items: [], createdAt: new Date().toISOString()
+    id: 'mock', receiptNumber: 1, documentType: 'TICKET', status: 'COMPLETED', subtotal: 100, taxTotal: 16,
+    discount: 0, total: 116, paymentMethod: 'CASH', usdRate: 50, userId: '1',
+    customerId: null, customer: null, items: [], createdAt: new Date().toISOString()
   } }),
   listSales: async () => ({ success: false, error: 'Mock: Not implemented' }),
   cancelSale: async () => ({ success: false, error: 'Mock: Not implemented' }),
@@ -41,6 +42,8 @@ window.electronAPI = {
   createCustomer: async () => ({ success: true, data: { id: '1', taxId: 'J-12345678-4', name: 'Mock', active: true } }),
   updateCustomer: async () => ({ success: true, data: { id: '1', taxId: 'J-12345678-4', name: 'Mock', active: true } }),
   deleteCustomer: async () => ({ success: true }),
+  getCompanyConfig: async () => ({ success: true, data: { businessName: '', taxId: null, address: null, phone: null, email: null, logo: null } }),
+  updateCompanyConfig: async () => ({ success: true, data: { businessName: 'Empresa', taxId: null, address: null, phone: null, email: null, logo: null } }),
   listPlugins: async () => ({ success: true, data: [] }),
   installPlugin: async () => ({ success: false, error: 'Mock: Not implemented' }),
   togglePluginActive: async () => ({ success: true, data: { active: true } })

@@ -50,6 +50,10 @@ const electronAPI = {
   getConfig: () => ipcRenderer.invoke('config:get'),
   updateConfig: (config: unknown) => ipcRenderer.invoke('config:update', config),
 
+  // Company
+  getCompanyConfig: () => ipcRenderer.invoke('company:get'),
+  updateCompanyConfig: (config: unknown) => ipcRenderer.invoke('company:update', config),
+
   // Printer
   testPrinter: () => ipcRenderer.invoke('printer:test'),
   printReceipt: (data: unknown) => ipcRenderer.invoke('printer:print-receipt', data),
