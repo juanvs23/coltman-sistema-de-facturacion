@@ -3,8 +3,8 @@
 ## Language (IA)
 
 - **En chat con el usuario**: español neutro, sin modismos regionales (ni rioplatense, ni venezolano, ni mexicano)
-- **En documentación y README**: español neutro o inglés técnico según contexto
-- **En código, commits, UI labels**: inglés
+- **En artefactos generados** (UI labels, texto en pantalla, documentación, README, mensajes de error, tooltips, notificaciones, textos de ayuda, copy de cualquier tipo): **español neutro obligatorio**. No usar inglés en UI copy a menos que sea un término técnico universal (PDF, email) o el usuario lo solicite explícitamente.
+- **En código, nombres de variables, funciones, tipos, nombres de archivos, commits**: inglés
 - No usar voseo, ni "che", ni "pana", ni "vale", ni "wey", ni regionalismos de ningún país
 
 ## Overview
@@ -97,34 +97,53 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.1.1)
+## Current State (v0.3.0)
 
-**Branch**: `master`
-**Date**: 2026-07-18
+**Branch**: `dev`
+**Date**: 2026-07-19
 
 ### Completed
 - [x] Project structure and tooling (Electron + TS + React + Prisma + SQLite)
-- [x] Prisma schema with all domain models + fixed inverse relations
+- [x] Prisma schema with all domain models + Tax model + ProductTax join table + Customer (pending)
 - [x] Core ports/interfaces for all domains
 - [x] Auth: login handler real (Prisma + bcrypt) + dev mock for browser
 - [x] Authentication UI (login page with dark mode)
 - [x] POS shell layout (sidebar + top nav + iconos Icomoon)
 - [x] Design system (Cal.com + dark mode + POS adaptations)
-- [x] TDD config (Vitest + React Testing Library)
+- [x] TDD config (Vitest + React Testing Library) — 39 tests
 - [x] SDD initialization + skill registry
-- [x] Documentation (README, CHANGELOG, context, roadmap)
+- [x] Documentation (README, CHANGELOG, context, roadmap, PLAN_ACCION)
 - [x] Dependencies installed (npm install)
 - [x] electron-vite config con entry points explícitos
-- [x] Base de datos SQLite creada y seed ejecutado (3 users, 22 products)
+- [x] Base de datos SQLite creada y seed ejecutado (3 users, 3 taxes, 22 products)
 - [x] Tipografía Inter self-hosted (@fontsource)
 - [x] CSP y favicon arreglados
+- [x] **Router de navegación** con sidebar activo y 6 vistas
+- [x] **Vista Configuración** con tabs: Usuarios, Impuestos, Tasa USD, Seguridad, Empresa, Fiscal
+- [x] **CRUD de usuarios** (crear, editar, activar/desactivar)
+- [x] **CRUD de impuestos** (crear, editar, activar/desactivar) ✅
+- [x] **CRUD de categorías** (dentro de Inventario)
+- [x] **CRUD de productos** con selección múltiple de impuestos ✅
+- [x] **Pantalla POS** actual con búsqueda + ticket + cobro
+- [x] **Tasa USD** configurable desde Settings con persistencia en DB
+- [x] **PrismaClient singleton** compartido
+- [x] **Sales:create** handler con transacción, correlativo, stock, impuestos múltiples, taxBreakdown
 
-### Pending (Priorizado)
-- [ ] **Router de navegación** — menú lateral inactivo (próximo a implementar)
-- [ ] CRUD de productos
-- [ ] Pantalla POS (carrito + búsqueda)
-- [ ] Modal de cobro
-- [ ] Arqueo de caja
-- [ ] Historial de ventas
-- [ ] Reportes
-- [ ] Admin de usuarios
+### Completed (v0.3.0)
+- [x] **Core multi-país**: ICountryPlugin, Customer.taxId genérico, AppConfig.country
+- [x] **plugin-ve 🇻🇪** gratis bundled: RIF, Bs./USD, métodos VE, leyendas SENIAT
+- [x] **plugin-co 🇨🇴** placeholder: NIT, COP, métodos CO (Nequi, DaviPlata)
+- [x] **Panel de Plugins**: PluginsTab en Settings con toggle + reload al cambiar país
+- [x] **PluginStateStore**: JSON persistente (localStorage en dev, archivo en Electron)
+- [x] **useCountry() hook**: reactivo al país activo
+- [x] **45 tests**
+
+### Pending (Fase 1)
+- [ ] **Factura vs Ticket** — toggle + datos cliente visibles en POS
+- [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
+- [ ] **Pestaña Empresa** en Settings
+- [ ] **Descuentos** por línea y total
+- [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación
+- [ ] **Arqueo de caja** (apertura, movimientos, cierre)
+- [ ] **Reportes** (ventas por día/producto/usuario, libro IVA)
+- [ ] **Multi-método de pago** en una sola venta

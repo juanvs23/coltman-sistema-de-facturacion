@@ -1,0 +1,79 @@
+import type { Product } from '@shared/types'
+import CartItem from '../molecules/CartItem'
+import CartSummary from '../molecules/CartSummary'
+
+export interface CartEntry {
+  product: Product
+  quantity: number
+}
+
+interface ShoppingCartProps {
+  entries: CartEntry[]
+  usdRate: number
+  onUpdateQuantity: (productId: string, quantity: number) => void
+  onRemove: (productId: string) => void
+  onClear: () => void
+  onCheckout: () => void
+}
+
+export default function ShoppingCart({
+  entries, usdRate, onUpdateQuantity, onRemove, onClear, onCheckout
+}: ShoppingCartProps): JSX.Element {
+  return (
+    <div className="flex h-full flex-col rounded-lg border border-hairline bg-surface-card">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+        <h3 className="text-body-sm font-medium text-ink">
+          Carrito ({entries.length} item{entries.length !== 1 ? 's' : ''})
+        </h3>
+        {entries.length > 0 && (
+          <button onClick={onClear}
+            className="text-caption text-muted-soft transition-colors hover:text-error">
+            Vaciar
+          </button>
+        )}
+      </div>
+
+      {/* Empty state */}
+      {entries.length === 0 && (
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <p className="text-body-sm text-muted-soft">Carrito vacío</p>
+            <p className="text-caption text-muted-soft mt-1">Seleccione productos para comenzar</p>
+          </div>
+        </div>
+      )}
+
+      {/* Items list */}
+      {entries.length > 0 && (
+        <div className="flex-1 overflow-y-auto">
+          {entries.map((entry) => (
+            <CartItem
+              key={entry.product.id}
+              entry={entry}
+              usdRate={usdRate}
+              onUpdateQuantity={onUpdateQuantity}
+              onRemove={onRemove}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Summary + checkout */}
+      {entries.length > 0 && (
+        <>
+          <CartSummary entries={entries} usdRate={usdRate} />
+          <div className="border-t border-hairline px-4 py-3">
+            <button
+              onClick={onCheckout}
+              className="w-full rounded-lg bg-primary py-3 text-body-sm font-medium text-on-primary
+                transition-opacity hover:opacity-90"
+            >
+              Cobrar (F4)
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

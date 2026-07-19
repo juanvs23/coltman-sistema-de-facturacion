@@ -4,6 +4,7 @@ import { app } from 'electron'
 import type { IPlugin } from '@plugin-api/contracts/IPlugin'
 import type { PluginInfo, PluginResult, PluginEventPayload } from '@plugin-api/types'
 import { loadPluginManifest } from './PluginManifest'
+import { PluginStateStore } from './PluginStateStore'
 import type { LicenseManager } from '../core/license/LicenseManager'
 
 /**
@@ -19,11 +20,13 @@ export class PluginLoader {
   private licenseManager: LicenseManager
   private pluginsDir: string
   private builtInDir: string
+  private stateStore: PluginStateStore
 
   constructor(licenseManager: LicenseManager) {
     this.licenseManager = licenseManager
     this.pluginsDir = join(app.getPath('userData'), 'plugins')
     this.builtInDir = join(__dirname, 'built-in')
+    this.stateStore = new PluginStateStore()
 
     // Ensure plugins directory exists
     if (!existsSync(this.pluginsDir)) {
@@ -38,8 +41,12 @@ export class PluginLoader {
     // Load external plugins
     await this.loadFromDirectory(this.pluginsDir, 'external')
 
-    // Activate all loaded plugins
+    // Activate only active plugins
     for (const [id, plugin] of this.plugins) {
+      if (!this.stateStore.isActive(id)) {
+        console.log(`Plugin "${id}" is disabled, skipping activation`)
+        continue
+      }
       try {
         const result = await plugin.activate()
         if (!result.success) {
@@ -109,7 +116,7 @@ export class PluginLoader {
           version: manifest.version,
           description: manifest.description,
           author: manifest.author,
-          enabled: true,
+      enabled: this.stateStore.isActive(plugin.manifest.id),
           visibility: manifest.visibility,
           target: manifest.target,
           hooks: manifest.hooks
@@ -129,6 +136,33 @@ export class PluginLoader {
       await plugin.deactivate()
       this.plugins.delete(id)
     }
+  }
+
+  /** Activa o desactiva un plugin en caliente */
+  async togglePlugin(id: string): Promise<PluginResult<{ active: boolean }>> {
+    const plugin = this.plugins.get(id)
+    if (!plugin) return { success: false, error: 'Plugin no encontrado' }
+
+    const entry = this.stateStore.toggleActive(id)
+    if (entry.active) {
+      try {
+        const result = await plugin.activate()
+        if (!result.success) {
+          this.stateStore.save(id, { ...entry, active: false })
+          return { success: false, error: result.error ?? 'Error al activar' }
+        }
+      } catch {
+        this.stateStore.save(id, { ...entry, active: false })
+        return { success: false, error: 'Error al activar el plugin' }
+      }
+    } else {
+      await plugin.deactivate()
+    }
+    return { success: true, data: { active: entry.active } }
+  }
+
+  isActive(id: string): boolean {
+    return this.stateStore.isActive(id)
   }
 
   async dispatchHook(hook: string, data: Record<string, unknown> = {}): Promise<void> {

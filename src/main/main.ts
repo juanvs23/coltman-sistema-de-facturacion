@@ -1,7 +1,12 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { prisma } from './infrastructure/persistence/prisma'
 import { LicenseManager } from './core/license/LicenseManager'
 import { PluginLoader } from './plugins/PluginLoader'
+import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository'
+import { PrismaProductRepository } from './infrastructure/persistence/PrismaProductRepository'
+import { PrismaCustomerRepository } from './infrastructure/persistence/PrismaCustomerRepository'
+import { VenezuelaPlugin } from './country/ve/VenezuelaPlugin'
 import { registerIpcHandlers } from './ipc/handlers'
 
 export const licenseManager = new LicenseManager()
@@ -37,7 +42,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  registerIpcHandlers({ pluginLoader })
+  const userRepository = new PrismaUserRepository(prisma)
+  const productRepository = new PrismaProductRepository()
+  const customerRepository = new PrismaCustomerRepository()
+  registerIpcHandlers({ pluginLoader, userRepository, productRepository, customerRepository })
   await pluginLoader.loadPlugins()
   createWindow()
 

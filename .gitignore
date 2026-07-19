@@ -32,5 +32,9 @@ logs/
 # Prisma
 prisma/migrations/
 
+# Documentation artifacts (except context)
+docs/*
+!docs/context.md
+
 # Playwright test artifacts
 .playwright-mcp/

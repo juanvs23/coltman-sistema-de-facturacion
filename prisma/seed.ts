@@ -2,11 +2,18 @@ import { PrismaClient, Role, ProductType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
+const USD_RATE = 48.50
+
+function calcBs(usd: number, rate: number = USD_RATE): number {
+  return Math.round(usd * rate * 100) / 100
+}
 
 async function main(): Promise<void> {
   console.log('🌱 Seeding database...')
 
   // ── Clean existing data ──────────────────────────────────────
+  await prisma.productTax.deleteMany()
+  await prisma.tax.deleteMany()
   await prisma.saleItem.deleteMany()
   await prisma.sale.deleteMany()
   await prisma.cashMovement.deleteMany()
@@ -20,7 +27,7 @@ async function main(): Promise<void> {
   // ── Users ────────────────────────────────────────────────────
   const passwordHash = await bcrypt.hash('admin123', 10)
 
-  const superAdmin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       username: 'admin',
       password: passwordHash,
@@ -49,8 +56,21 @@ async function main(): Promise<void> {
 
   console.log('  ✅ Users created')
 
+  // ── Taxes ────────────────────────────────────────────────────
+  const ivaGeneral = await prisma.tax.create({
+    data: { name: 'IVA General 16%', rate: 16.0, description: 'Impuesto al Valor Agregado 16%' }
+  })
+  const ivaReducido = await prisma.tax.create({
+    data: { name: 'IVA Reducido 8%', rate: 8.0, description: 'IVA reducido para rubros seleccionados' }
+  })
+  const exento = await prisma.tax.create({
+    data: { name: 'Exento', rate: 0.0, description: 'Productos exentos de IVA' }
+  })
+
+  console.log('  ✅ Taxes created')
+
   // ── Categories ───────────────────────────────────────────────
-  const categories = await Promise.all([
+  const [alimentos, bebidas, electronicos, hogar, servicios] = await Promise.all([
     prisma.category.create({ data: { name: 'Alimentos', color: '#10b981' } }),
     prisma.category.create({ data: { name: 'Bebidas', color: '#3b82f6' } }),
     prisma.category.create({ data: { name: 'Electrónicos', color: '#8b5cf6' } }),
@@ -58,85 +78,132 @@ async function main(): Promise<void> {
     prisma.category.create({ data: { name: 'Servicios', color: '#ef4444' } })
   ])
 
-  const [alimentos, bebidas, electronicos, hogar, servicios] = categories
-
   console.log('  ✅ Categories created')
 
   // ── Products ─────────────────────────────────────────────────
-  // Alimentos
-  await prisma.product.create({
-    data: { code: 'HAR001', name: 'Harina PAN 1kg', price: 4.50, cost: 3.20, stock: 100, taxRate: 16.0, categoryId: alimentos.id }
+  // Helper para crear producto con impuestos
+  async function createProduct(data: {
+    code: string; name: string; priceUsd: number; description?: string; cost?: number;
+    stock?: number; type?: ProductType; categoryId: string; taxes: Array<{ id: string }>
+  }): Promise<void> {
+    const product = await prisma.product.create({
+      data: {
+        code: data.code,
+        name: data.name,
+        description: data.description,
+        type: data.type ?? ProductType.PRODUCT,
+        priceUsd: data.priceUsd,
+        price: calcBs(data.priceUsd),
+        cost: data.cost ?? undefined,
+        stock: data.stock ?? 0,
+        categoryId: data.categoryId
+      }
+    })
+
+    // Asociar impuestos
+    for (const tax of data.taxes) {
+      await prisma.productTax.create({
+        data: { productId: product.id, taxId: tax.id }
+      })
+    }
+  }
+
+  // Alimentos (IVA General)
+  await createProduct({
+    code: 'HAR001', name: 'Harina PAN 1kg', priceUsd: 0.10, cost: 0.07, stock: 100,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'ARR001', name: 'Arroz Blanquito 1kg', price: 3.00, cost: 2.10, stock: 80, taxRate: 16.0, categoryId: alimentos.id }
+  await createProduct({
+    code: 'ARR001', name: 'Arroz Blanquito 1kg', priceUsd: 0.07, cost: 0.05, stock: 80,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'ACE001', name: 'Aceite Maíz 1L', price: 5.50, cost: 4.00, stock: 60, taxRate: 16.0, categoryId: alimentos.id }
+  await createProduct({
+    code: 'ACE001', name: 'Aceite Maíz 1L', priceUsd: 0.12, cost: 0.09, stock: 60,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'AZU001', name: 'Azúcar 1kg', price: 2.50, cost: 1.80, stock: 90, taxRate: 16.0, categoryId: alimentos.id }
+  await createProduct({
+    code: 'AZU001', name: 'Azúcar 1kg', priceUsd: 0.06, cost: 0.04, stock: 90,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'LEC001', name: 'Leche Completa 1L', price: 3.20, cost: 2.40, stock: 50, taxRate: 16.0, categoryId: alimentos.id }
+  await createProduct({
+    code: 'LEC001', name: 'Leche Completa 1L', priceUsd: 0.07, cost: 0.05, stock: 50,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'CAF001', name: 'Café Madrigal 250g', price: 6.00, cost: 4.50, stock: 40, taxRate: 16.0, categoryId: alimentos.id }
+  await createProduct({
+    code: 'CAF001', name: 'Café Madrigal 250g', priceUsd: 0.13, cost: 0.10, stock: 40,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'PAS001', name: 'Pasta La Molisana 500g', price: 2.80, cost: 1.90, stock: 70, taxRate: 16.0, categoryId: alimentos.id }
+  await createProduct({
+    code: 'PAS001', name: 'Pasta La Molisana 500g', priceUsd: 0.06, cost: 0.04, stock: 70,
+    categoryId: alimentos.id, taxes: [ivaGeneral]
   })
 
-  // Bebidas
-  await prisma.product.create({
-    data: { code: 'REF001', name: 'Coca-Cola 1.5L', price: 4.00, cost: 2.80, stock: 120, taxRate: 16.0, categoryId: bebidas.id }
+  // Bebidas (IVA General)
+  await createProduct({
+    code: 'REF001', name: 'Coca-Cola 1.5L', priceUsd: 0.09, cost: 0.06, stock: 120,
+    categoryId: bebidas.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'REF002', name: 'Pepsi 1.5L', price: 3.80, cost: 2.60, stock: 100, taxRate: 16.0, categoryId: bebidas.id }
+  await createProduct({
+    code: 'REF002', name: 'Pepsi 1.5L', priceUsd: 0.08, cost: 0.06, stock: 100,
+    categoryId: bebidas.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'AGU001', name: 'Agua Mineral 1.5L', price: 1.50, cost: 1.00, stock: 200, taxRate: 16.0, categoryId: bebidas.id }
+  await createProduct({
+    code: 'AGU001', name: 'Agua Mineral 1.5L', priceUsd: 0.04, cost: 0.02, stock: 200,
+    categoryId: bebidas.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'CER001', name: 'Polar Pilsen Lata 355ml', price: 2.20, cost: 1.50, stock: 150, taxRate: 16.0, categoryId: bebidas.id }
+  await createProduct({
+    code: 'CER001', name: 'Polar Pilsen Lata 355ml', priceUsd: 0.05, cost: 0.03, stock: 150,
+    categoryId: bebidas.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'JGO001', name: 'Jugo Natural Naranja 1L', price: 5.00, cost: 3.50, stock: 30, taxRate: 16.0, categoryId: bebidas.id }
-  })
-
-  // Electrónicos
-  await prisma.product.create({
-    data: { code: 'CBL001', name: 'Cable USB-C 2m', price: 8.00, cost: 5.00, stock: 50, taxRate: 16.0, categoryId: electronicos.id }
-  })
-  await prisma.product.create({
-    data: { code: 'CRG001', name: 'Cargador Rápido 20W', price: 25.00, cost: 15.00, stock: 30, taxRate: 16.0, categoryId: electronicos.id }
-  })
-  await prisma.product.create({
-    data: { code: 'AIR001', name: 'Auriculares Bluetooth', price: 45.00, cost: 28.00, stock: 20, taxRate: 16.0, categoryId: electronicos.id }
-  })
-  await prisma.product.create({
-    data: { code: 'MEM001', name: 'Memoria USB 64GB', price: 18.00, cost: 10.00, stock: 35, taxRate: 16.0, categoryId: electronicos.id }
+  await createProduct({
+    code: 'JGO001', name: 'Jugo Natural Naranja 1L', priceUsd: 0.11, cost: 0.08, stock: 30,
+    categoryId: bebidas.id, taxes: [ivaGeneral]
   })
 
-  // Hogar
-  await prisma.product.create({
-    data: { code: 'DET001', name: 'Detergente Líquido 1L', price: 7.00, cost: 5.00, stock: 45, taxRate: 16.0, categoryId: hogar.id }
+  // Electrónicos (IVA General)
+  await createProduct({
+    code: 'CBL001', name: 'Cable USB-C 2m', priceUsd: 0.17, cost: 0.11, stock: 50,
+    categoryId: electronicos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'CLO001', name: 'Cloro 1L', price: 2.00, cost: 1.20, stock: 60, taxRate: 16.0, categoryId: hogar.id }
+  await createProduct({
+    code: 'CRG001', name: 'Cargador Rápido 20W', priceUsd: 0.52, cost: 0.31, stock: 30,
+    categoryId: electronicos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'PAP001', name: 'Papel Higiénico x4', price: 5.50, cost: 3.80, stock: 80, taxRate: 16.0, categoryId: hogar.id }
+  await createProduct({
+    code: 'AIR001', name: 'Auriculares Bluetooth', priceUsd: 0.93, cost: 0.58, stock: 20,
+    categoryId: electronicos.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'JAB001', name: 'Jabón de Baño x3', price: 4.00, cost: 2.50, stock: 70, taxRate: 16.0, categoryId: hogar.id }
+  await createProduct({
+    code: 'MEM001', name: 'Memoria USB 64GB', priceUsd: 0.38, cost: 0.21, stock: 35,
+    categoryId: electronicos.id, taxes: [ivaGeneral]
   })
 
-  // Servicios (sin inventario)
-  await prisma.product.create({
-    data: { code: 'SER001', name: 'Recarga Movil Digital', price: 10.00, type: ProductType.SERVICE, taxRate: 0.0, categoryId: servicios.id }
+  // Hogar (IVA General)
+  await createProduct({
+    code: 'DET001', name: 'Detergente Líquido 1L', priceUsd: 0.15, cost: 0.11, stock: 45,
+    categoryId: hogar.id, taxes: [ivaGeneral]
   })
-  await prisma.product.create({
-    data: { code: 'SER002', name: 'Recarga Movil $10', price: 10.00, cost: 9.50, type: ProductType.SERVICE, priceUsd: 10.00, taxRate: 0.0, categoryId: servicios.id }
+  await createProduct({
+    code: 'CLO001', name: 'Cloro 1L', priceUsd: 0.05, cost: 0.03, stock: 60,
+    categoryId: hogar.id, taxes: [ivaGeneral]
+  })
+  await createProduct({
+    code: 'PAP001', name: 'Papel Higiénico x4', priceUsd: 0.12, cost: 0.08, stock: 80,
+    categoryId: hogar.id, taxes: [ivaGeneral]
+  })
+  await createProduct({
+    code: 'JAB001', name: 'Jabón de Baño x3', priceUsd: 0.09, cost: 0.06, stock: 70,
+    categoryId: hogar.id, taxes: [ivaGeneral]
+  })
+
+  // Servicios (sin IVA)
+  await createProduct({
+    code: 'SER001', name: 'Recarga Movil Digital', priceUsd: 10.00, type: ProductType.SERVICE,
+    categoryId: servicios.id, taxes: [exento]
+  })
+  await createProduct({
+    code: 'SER002', name: 'Recarga Movil $10', priceUsd: 10.00, cost: 9.50, type: ProductType.SERVICE,
+    categoryId: servicios.id, taxes: [exento]
   })
 
   console.log('  ✅ Products created')
@@ -145,7 +212,8 @@ async function main(): Promise<void> {
   await prisma.appConfig.create({
     data: {
       currencySymbol: 'Bs.',
-      usdRate: 48.50,
+      country: 'VE',
+      usdRate: USD_RATE,
       usdRateSource: 'bcv',
       taxRateDefault: 16.0,
       lowStockThreshold: 10,
@@ -178,6 +246,8 @@ async function main(): Promise<void> {
   console.log('  admin     / admin123  (SUPERADMIN)')
   console.log('  vendedor1 / admin123  (SELLER)')
   console.log('  vendedor2 / admin123  (SELLER)')
+  console.log('')
+  console.log(`USD Rate: Bs. ${USD_RATE} / $1`)
 }
 
 main()

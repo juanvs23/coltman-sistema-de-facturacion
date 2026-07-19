@@ -31,6 +31,22 @@ model User {
   closedRegisters  CashRegister[]
 }
 
+// ─── Customers (RIF / datos fiscales) ────────────────────────
+
+model Customer {
+  id        String   @id @default(uuid())
+  taxId     String   @unique // Identificador fiscal: RIF (VE), NIT (CO), RFC (MX), RUC (EC)
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales     Sale[]
+}
+
 // ─── Products & Inventory ────────────────────────────────────
 
 enum ProductType {
@@ -41,22 +57,23 @@ enum ProductType {
 
 model Product {
   id          String      @id @default(uuid())
-  code        String      @unique // SKU o código interno
+  code        String      @unique // SKU / código de barras
   name        String
   description String?
   type        ProductType @default(PRODUCT)
-  price       Float       // Precio en moneda local
-  priceUsd    Float?      // Precio referencial en USD
+  price       Float       @default(0) // Precio calculado en moneda local (priceUsd * tasa del día)
+  priceUsd    Float       // Precio referencial en USD (valor primario)
   cost        Float?      // Costo (para margen de ganancia)
   stock       Int         @default(0)
-  taxRate     Float       @default(16.0) // IVA porcentaje
+  image       String?     // Ruta de imagen del producto
   active      Boolean     @default(true)
   categoryId  String?
   category    Category?   @relation(fields: [categoryId], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  saleItems SaleItem[]
+  saleItems   SaleItem[]
+  taxes       ProductTax[]
 }
 
 model Category {
@@ -64,6 +81,29 @@ model Category {
   name     String    @unique
   color    String?   // Para badges y organización visual
   products Product[]
+}
+
+// ─── Taxes (impuestos configurables) ──────────────────────────
+
+model Tax {
+  id          String       @id @default(uuid())
+  name        String       @unique // Ej: "IVA 16%", "IVA Reducido 8%"
+  rate        Float        // Porcentaje, ej: 16.0
+  description String?
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  products    ProductTax[]
+}
+
+model ProductTax {
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  taxId     String
+  tax       Tax     @relation(fields: [taxId], references: [id], onDelete: Cascade)
+
+  @@id([productId, taxId])
 }
 
 // ─── Sales & Transactions ────────────────────────────────────
@@ -105,20 +145,24 @@ model Sale {
   cancelledBy     User?       @relation("CancelledSale", fields: [cancelledById], references: [id])
 
   items SaleItem[]
+  customerId   String?
+  customer     Customer?   @relation(fields: [customerId], references: [id])
 }
 
 model SaleItem {
-  id        String  @id @default(uuid())
-  quantity  Int
-  price     Float   // Precio unitario al momento de la venta
-  subtotal  Float   // quantity * price
-  taxRate   Float   @default(16.0)
-  taxAmount Float
-  total     Float   // subtotal + taxAmount
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  saleId    String
-  sale      Sale    @relation(fields: [saleId], references: [id])
+  id           String  @id @default(uuid())
+  quantity     Int
+  price        Float   // Precio unitario en moneda local al momento de la venta
+  priceUsd     Float?  // Precio unitario en USD al momento de la venta
+  subtotal     Float   // quantity * price
+  taxRate      Float   @default(16.0) // Tasa combinada de impuestos
+  taxAmount    Float   // Suma total de impuestos
+  taxBreakdown String? // JSON con desglose: [{"taxId":"...","name":"IVA 16%","rate":16,"amount":1.28}]
+  total        Float   // subtotal + taxAmount
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  saleId       String
+  sale         Sale    @relation(fields: [saleId], references: [id])
 
   @@index([saleId])
 }
@@ -179,6 +223,7 @@ model FiscalConfig {
 
 model AppConfig {
   id              String  @id @default("default")
+  country         String  @default("VE") // Código ISO del país
   currencySymbol  String  @default("Bs.")
   usdRate         Float   @default(0) // Tasa BCV actual
   usdRateSource   String  @default("bcv") // bcv, enparalelo, criptodolar

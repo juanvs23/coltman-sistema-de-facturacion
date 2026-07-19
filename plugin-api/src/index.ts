@@ -63,6 +63,14 @@ export type {
   SeniatSubmissionResult
 } from './contracts/ISeniat'
 
+// ─── Country / Region ─────────────────────────────────────────
+export type {
+  ICountryPlugin,
+  TaxIdValidation,
+  PaymentMethod as CountryPaymentMethod,
+  DefaultTax
+} from './contracts/ICountryPlugin'
+
 // ─── License ──────────────────────────────────────────────────
 export type {
   ILicenseManager,

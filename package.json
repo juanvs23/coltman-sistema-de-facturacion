@@ -40,6 +40,7 @@
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.14.0",

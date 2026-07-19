@@ -1,15 +1,19 @@
 import { ipcMain } from 'electron'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { prisma } from '../infrastructure/persistence/prisma'
 import type { PluginLoader } from '../plugins/PluginLoader'
-
-const prisma = new PrismaClient()
+import type { IUserRepository } from '../core/ports/IUserRepository'
+import type { IProductRepository } from '../core/ports/IProductRepository'
+import type { ICustomerRepository } from '../core/ports/ICustomerRepository'
 
 /**
  * Registra todos los manejadores IPC.
  */
 export function registerIpcHandlers(deps: {
   pluginLoader: PluginLoader
+  userRepository?: IUserRepository
+  productRepository?: IProductRepository
+  customerRepository?: ICustomerRepository
 }): void {
   // ─── Auth ────────────────────────────────────────────────
   ipcMain.handle('auth:login', async (_event, credentials: { username: string; password: string }) => {
@@ -50,21 +54,303 @@ export function registerIpcHandlers(deps: {
   })
 
   // ─── Products ────────────────────────────────────────────
-  ipcMain.handle('products:list', async () => {
-    return { success: false, error: 'Not implemented' }
-  })
+  const productRepo = deps.productRepository
 
-  ipcMain.handle('products:search', async (_event, query: string) => {
-    return { success: false, error: 'Not implemented' }
-  })
+  if (productRepo) {
+    ipcMain.handle('products:list', async (_event, activeOnly?: boolean) => {
+      try {
+        const products = await productRepo.findAll(activeOnly)
+        return { success: true, data: products }
+      } catch (error) {
+        return { success: false, error: 'Error al listar productos' }
+      }
+    })
 
-  ipcMain.handle('products:create', async (_event, product) => {
-    return { success: false, error: 'Not implemented' }
-  })
+    ipcMain.handle('products:search', async (_event, query: string) => {
+      try {
+        const products = await productRepo.search(query)
+        return { success: true, data: products }
+      } catch (error) {
+        return { success: false, error: 'Error al buscar productos' }
+      }
+    })
+
+    ipcMain.handle('products:create', async (_event, input) => {
+      try {
+        const product = await productRepo.create(input)
+        return { success: true, data: product }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          return { success: false, error: 'El código de producto ya existe' }
+        }
+        return { success: false, error: 'Error al crear producto' }
+      }
+    })
+
+    ipcMain.handle('products:update', async (_event, id: string, input) => {
+      try {
+        const product = await productRepo.update(id, input)
+        return { success: true, data: product }
+      } catch (error) {
+        return { success: false, error: 'Error al actualizar producto' }
+      }
+    })
+
+    ipcMain.handle('products:delete', async (_event, id: string) => {
+      try {
+        await productRepo.delete(id)
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: 'Error al eliminar producto' }
+      }
+    })
+
+    ipcMain.handle('categories:list', async () => {
+      try {
+        const categories = await productRepo.findCategories()
+        return { success: true, data: categories }
+      } catch (error) {
+        return { success: false, error: 'Error al listar categorías' }
+      }
+    })
+
+    ipcMain.handle('categories:create', async (_event, name: string, color?: string) => {
+      try {
+        const category = await productRepo.createCategory(name, color)
+        return { success: true, data: category }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          return { success: false, error: 'La categoría ya existe' }
+        }
+        return { success: false, error: 'Error al crear categoría' }
+      }
+    })
+
+    ipcMain.handle('categories:update', async (_event, id: string, name: string, color?: string) => {
+      try {
+        const category = await productRepo.updateCategory(id, name, color)
+        return { success: true, data: category }
+      } catch (error) {
+        return { success: false, error: 'Error al actualizar categoría' }
+      }
+    })
+
+    ipcMain.handle('categories:delete', async (_event, id: string) => {
+      try {
+        await productRepo.deleteCategory(id)
+        return { success: true }
+      } catch (error) {
+        return { success: false, error: 'Error al eliminar categoría' }
+      }
+    })
+
+    // ─── Taxes ─────────────────────────────────────────────
+    ipcMain.handle('taxes:list', async () => {
+      try {
+        const taxes = await productRepo.findAllTaxes()
+        return { success: true, data: taxes }
+      } catch (error) {
+        return { success: false, error: 'Error al listar impuestos' }
+      }
+    })
+
+    ipcMain.handle('taxes:create', async (_event, input: { name: string; rate: number; description?: string }) => {
+      try {
+        const tax = await productRepo.createTax(input.name, input.rate, input.description)
+        return { success: true, data: tax }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          return { success: false, error: 'El impuesto ya existe' }
+        }
+        return { success: false, error: 'Error al crear impuesto' }
+      }
+    })
+
+    ipcMain.handle('taxes:update', async (_event, id: string, input: { name?: string; rate?: number; description?: string; active?: boolean }) => {
+      try {
+        const tax = await productRepo.updateTax(id, input)
+        return { success: true, data: tax }
+      } catch (error) {
+        return { success: false, error: 'Error al actualizar impuesto' }
+      }
+    })
+  }
+
+  // ─── Customers ──────────────────────────────────────────
+  const customerRepo = deps.customerRepository
+
+  if (customerRepo) {
+    ipcMain.handle('customers:list', async () => {
+      try {
+        const customers = await customerRepo.list()
+        return { success: true, data: customers }
+      } catch { return { success: false, error: 'Error al listar clientes' } }
+    })
+
+    ipcMain.handle('customers:search', async (_event, query: string) => {
+      try {
+        const customers = await customerRepo.search(query)
+        return { success: true, data: customers }
+      } catch { return { success: false, error: 'Error al buscar clientes' } }
+    })
+
+    ipcMain.handle('customers:find-by-tax-id', async (_event, taxId: string) => {
+      try {
+        const customer = await customerRepo.findByTaxId(taxId)
+        return { success: true, data: customer }
+      } catch { return { success: false, error: 'Error al buscar cliente' } }
+    })
+
+    ipcMain.handle('customers:create', async (_event, input) => {
+      try {
+        const customer = await customerRepo.create(input)
+        return { success: true, data: customer }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          return { success: false, error: 'El RIF ya existe' }
+        }
+        return { success: false, error: 'Error al crear cliente' }
+      }
+    })
+
+    ipcMain.handle('customers:update', async (_event, id: string, input) => {
+      try {
+        const customer = await customerRepo.update(id, input)
+        return { success: true, data: customer }
+      } catch { return { success: false, error: 'Error al actualizar cliente' } }
+    })
+
+    ipcMain.handle('customers:delete', async (_event, id: string) => {
+      try {
+        await customerRepo.delete(id)
+        return { success: true }
+      } catch { return { success: false, error: 'Error al eliminar cliente' } }
+    })
+  }
 
   // ─── Sales ───────────────────────────────────────────────
-  ipcMain.handle('sales:create', async (_event, sale) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('sales:create', async (_event, input: {
+    items: Array<{ productId: string; quantity: number; priceUsd: number }>
+    paymentMethod: string
+    cashAmount?: number
+    usdRate?: number
+    userId: string
+    customerId?: string
+  }) => {
+    try {
+      // Get current USD rate
+      const config = await prisma.appConfig.findUnique({ where: { id: 'default' } })
+      const rate = input.usdRate ?? config?.usdRate ?? 0
+      if (rate <= 0) return { success: false, error: 'Tasa USD no configurada' }
+
+      // Generate receipt number
+      const lastSale = await prisma.sale.findFirst({ orderBy: { receiptNumber: 'desc' }, select: { receiptNumber: true } })
+      const receiptNumber = (lastSale?.receiptNumber ?? 0) + 1
+
+      // Calculate totals and build sale items
+      let subtotalUsd = 0
+      let taxTotalUsd = 0
+      const saleItemsData: Array<{
+        quantity: number; price: number; priceUsd: number; subtotal: number
+        taxRate: number; taxAmount: number; taxBreakdown: string; total: number
+        productId: string
+      }> = []
+
+      for (const item of input.items) {
+        // Verify product exists and has stock
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+          include: { taxes: { include: { tax: true } } }
+        })
+        if (!product) return { success: false, error: `Producto no encontrado: ${item.productId}` }
+        if (!product.active) return { success: false, error: `Producto inactivo: ${product.name}` }
+        if (product.type === 'PRODUCT' && product.stock < item.quantity) {
+          return { success: false, error: `Stock insuficiente: ${product.name} (disponible: ${product.stock})` }
+        }
+
+        const priceUsd = item.priceUsd
+        const priceBs = priceUsd * rate
+        const itemSubtotalUsd = priceUsd * item.quantity
+
+        // Calculate taxes from product tax associations
+        const taxBreakdown: Array<{ taxId: string; name: string; rate: number; amount: number }> = []
+        let combinedRate = 0
+
+        for (const pt of product.taxes) {
+          if (pt.tax.active) {
+            const taxAmount = itemSubtotalUsd * (pt.tax.rate / 100)
+            taxBreakdown.push({
+              taxId: pt.tax.id,
+              name: pt.tax.name,
+              rate: pt.tax.rate,
+              amount: taxAmount
+            })
+            combinedRate += pt.tax.rate
+          }
+        }
+
+        const itemTaxUsd = taxBreakdown.reduce((sum, t) => sum + t.amount, 0)
+        const itemTotalUsd = itemSubtotalUsd + itemTaxUsd
+
+        subtotalUsd += itemSubtotalUsd
+        taxTotalUsd += itemTaxUsd
+
+        saleItemsData.push({
+          quantity: item.quantity,
+          price: priceBs,
+          priceUsd,
+          subtotal: priceBs * item.quantity,
+          taxRate: combinedRate,
+          taxAmount: itemTaxUsd * rate,
+          taxBreakdown: JSON.stringify(taxBreakdown),
+          total: itemTotalUsd * rate,
+          productId: item.productId
+        })
+      }
+
+      const totalUsd = subtotalUsd + taxTotalUsd
+
+      // Create sale in a transaction
+      const sale = await prisma.$transaction(async (tx) => {
+        // Create the sale
+        const created = await tx.sale.create({
+          data: {
+            receiptNumber,
+            status: 'COMPLETED',
+            subtotal: subtotalUsd * rate,
+            taxTotal: taxTotalUsd * rate,
+            total: totalUsd * rate,
+            paymentMethod: input.paymentMethod as never,
+            cashAmount: input.cashAmount ? input.cashAmount * rate : null,
+            usdRate: rate,
+            userId: input.userId,
+            customerId: input.customerId ?? null,
+            items: {
+              create: saleItemsData
+            }
+          },
+          include: { items: { include: { product: true } }, user: true }
+        })
+
+        // Deduct stock for each product
+        for (const item of input.items) {
+          const product = await tx.product.findUnique({ where: { id: item.productId } })
+          if (product && product.type === 'PRODUCT') {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { decrement: item.quantity } }
+            })
+          }
+        }
+
+        return created
+      })
+
+      return { success: true, data: sale }
+    } catch (error) {
+      console.error('sales:create error:', error)
+      return { success: false, error: 'Error al crear la venta' }
+    }
   })
 
   ipcMain.handle('sales:list', async (_event, filters) => {
@@ -90,16 +376,34 @@ export function registerIpcHandlers(deps: {
 
   // ─── USD Rate ────────────────────────────────────────────
   ipcMain.handle('usd:rate', async () => {
-    return { success: false, error: 'Not implemented' }
+    try {
+      const config = await prisma.appConfig.findUnique({ where: { id: 'default' } })
+      return { success: true, data: { rate: config?.usdRate ?? 0, source: config?.usdRateSource ?? 'manual' } }
+    } catch (error) {
+      return { success: false, error: 'Error al obtener tasa USD' }
+    }
   })
 
   // ─── Config ──────────────────────────────────────────────
   ipcMain.handle('config:get', async () => {
-    return { success: false, error: 'Not implemented' }
+    try {
+      const config = await prisma.appConfig.findUnique({ where: { id: 'default' } })
+      return { success: true, data: config }
+    } catch (error) {
+      return { success: false, error: 'Error al obtener configuración' }
+    }
   })
 
-  ipcMain.handle('config:update', async (_event, config) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('config:update', async (_event, data: Record<string, unknown>) => {
+    try {
+      const config = await prisma.appConfig.update({
+        where: { id: 'default' },
+        data: data as never
+      })
+      return { success: true, data: config }
+    } catch (error) {
+      return { success: false, error: 'Error al actualizar configuración' }
+    }
   })
 
   // ─── Printer ─────────────────────────────────────────────
@@ -110,6 +414,59 @@ export function registerIpcHandlers(deps: {
   ipcMain.handle('printer:print-receipt', async (_event, data) => {
     return { success: false, error: 'Not implemented' }
   })
+
+  // ─── Users ────────────────────────────────────────────────
+  const userRepo = deps.userRepository
+
+  if (userRepo) {
+    ipcMain.handle('users:list', async () => {
+      try {
+        const users = await userRepo.list()
+        return { success: true, data: users }
+      } catch (error) {
+        return { success: false, error: 'Error al listar usuarios' }
+      }
+    })
+
+    ipcMain.handle('users:create', async (_event, input: {
+      username: string
+      password: string
+      fullName: string
+      role: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+    }) => {
+      try {
+        const user = await userRepo.create(input)
+        return { success: true, data: user }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          return { success: false, error: 'El nombre de usuario ya existe' }
+        }
+        return { success: false, error: 'Error al crear usuario' }
+      }
+    })
+
+    ipcMain.handle('users:update', async (_event, id: string, input: {
+      fullName?: string
+      role?: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+      password?: string
+    }) => {
+      try {
+        const user = await userRepo.update(id, input)
+        return { success: true, data: user }
+      } catch (error) {
+        return { success: false, error: 'Error al actualizar usuario' }
+      }
+    })
+
+    ipcMain.handle('users:toggle-active', async (_event, id: string) => {
+      try {
+        const user = await userRepo.toggleActive(id)
+        return { success: true, data: user }
+      } catch (error) {
+        return { success: false, error: 'Error al cambiar estado del usuario' }
+      }
+    })
+  }
 
   // ─── Plugins ─────────────────────────────────────────────
   ipcMain.handle('plugins:list', async () => {
@@ -124,5 +481,14 @@ export function registerIpcHandlers(deps: {
   ipcMain.handle('plugins:install', async (_event, source: string) => {
     const result = await deps.pluginLoader.installPlugin(source)
     return result
+  })
+
+  ipcMain.handle('plugins:toggle-active', async (_event, id: string) => {
+    try {
+      const result = await deps.pluginLoader.togglePlugin(id)
+      return result
+    } catch (error) {
+      return { success: false, error: 'Error al cambiar estado del plugin' }
+    }
   })
 }

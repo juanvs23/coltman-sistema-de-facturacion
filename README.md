@@ -4,8 +4,8 @@ Punto de venta (POS) y sistema de facturación para **PYME venezolana**. Offline
 
 | Light mode | Dark mode |
 |---|---|
-| ![Login light](docs/screenshots/login.png) | ![Dashboard light](docs/screenshots/dashboard.png) |
-| ![Dashboard light](docs/screenshots/dashboard.png) | ![Dashboard dark](docs/screenshots/dashboard-dark.png) |
+| ![Login light](screenshots/login.png) | ![Dashboard light](screenshots/dashboard.png) |
+| ![Dashboard light](screenshots/dashboard.png) | ![Dashboard dark](screenshots/dashboard-dark.png) |
 
 > ⚡ Keyboard-first · 🎯 TDD · 🔌 Plugin system · 🇻🇪 Hecho en Venezuela
 
@@ -114,7 +114,7 @@ dev  →  (trabajo diario)  →  merge →  master  (producción)
 4. 🔲 Arqueo de caja
 5. 🔲 Historial de ventas
 
-Ver [roadmap completo](docs/roadmap.md) y [CHANGELOG](docs/CHANGELOG.md).
+Ver el [roadmap](docs/roadmap.md) (interno) y el [CHANGELOG](CHANGELOG.md).
 
 ## Plugins
 

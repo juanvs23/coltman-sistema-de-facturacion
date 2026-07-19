@@ -1,95 +1,157 @@
+import { useState, useEffect, useCallback } from 'react'
+import type { Product, Sale } from '@shared/types'
+import { useNavigation } from '../../shared/hooks/useNavigation'
 import { useAuth } from '../../shared/hooks/useAuth'
-import { useTheme } from '../../shared/hooks/useTheme'
-import { ImCart, ImBoxAdd, ImFileText2, ImCoinDollar, ImStatsBars, ImCog } from 'react-icons/im'
+import TopBar from '../organisms/TopBar'
+import Sidebar from '../organisms/Sidebar'
+import ContentArea from '../organisms/ContentArea'
+import ProductSearch from '../organisms/ProductSearch'
+import ShoppingCart from '../organisms/ShoppingCart'
+import PaymentModal from '../organisms/PaymentModal'
+import type { PaymentData } from '../organisms/PaymentModal'
+import ReceiptConfirm from '../organisms/ReceiptConfirm'
+import type { CartEntry } from '../organisms/ShoppingCart'
 
 export default function PosPage(): JSX.Element {
-  const { session, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
+  const { activeView } = useNavigation()
+  const { session } = useAuth()
+  const [entries, setEntries] = useState<CartEntry[]>([])
+  const [usdRate, setUsdRate] = useState(0)
+  const [focusKey, setFocusKey] = useState(0)
+  const [showPayment, setShowPayment] = useState(false)
+  const [lastSale, setLastSale] = useState<Sale | null>(null)
+
+  const loadRate = useCallback(async () => {
+    const res = await window.electronAPI.getUsdRate()
+    if (res.success && res.data) setUsdRate(res.data.rate)
+  }, [])
+
+  useEffect(() => {
+    loadRate()
+    const interval = setInterval(loadRate, 300000)
+    return () => clearInterval(interval)
+  }, [loadRate])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (activeView !== 'pos') return
+      if (e.key === 'F2') {
+        e.preventDefault()
+        setFocusKey(k => k + 1)
+      }
+      if (e.key === 'F4' && entries.length > 0) {
+        e.preventDefault()
+        setShowPayment(true)
+      }
+      if (e.key === 'Escape' && entries.length > 0) {
+        e.preventDefault()
+        setEntries([])
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [entries, activeView])
+
+  const handleSelectProduct = (product: Product): void => {
+    setEntries(prev => {
+      const existing = prev.find(e => e.product.id === product.id)
+      if (existing) {
+        return prev.map(e =>
+          e.product.id === product.id
+            ? { ...e, quantity: Math.min(e.quantity + 1, product.type === 'PRODUCT' ? product.stock : 999) }
+            : e
+        )
+      }
+      return [...prev, { product, quantity: 1 }]
+    })
+  }
+
+  const handleUpdateQuantity = (productId: string, quantity: number): void => {
+    setEntries(prev =>
+      quantity <= 0
+        ? prev.filter(e => e.product.id !== productId)
+        : prev.map(e => (e.product.id === productId ? { ...e, quantity } : e))
+    )
+  }
+
+  const handleRemove = (productId: string): void => {
+    setEntries(prev => prev.filter(e => e.product.id !== productId))
+  }
+
+  const handleClear = (): void => {
+    setEntries([])
+  }
+
+  const handleCheckout = async (data: PaymentData): Promise<void> => {
+    if (!session) throw new Error('Sesión no encontrada')
+
+    const res = await window.electronAPI.createSale({
+      items: entries.map(e => ({
+        productId: e.product.id,
+        quantity: e.quantity,
+        priceUsd: e.product.priceUsd
+      })),
+      paymentMethod: data.paymentMethod,
+      cashAmount: data.cashAmount,
+      usdRate,
+      userId: session.userId
+    })
+
+    if (!res.success) throw new Error(res.error ?? 'Error al crear venta')
+
+    setLastSale(res.data ?? null)
+    setShowPayment(false)
+    setEntries([])
+  }
+
+  const handleNewSale = (): void => {
+    setLastSale(null)
+  }
 
   return (
     <div className="flex h-screen flex-col bg-canvas">
-      {/* Top Navigation */}
-      <header className="flex h-16 items-center justify-between border-b border-hairline px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-            <span className="text-body-sm font-semibold text-on-primary">SF</span>
-          </div>
-          <h1 className="text-title-md text-ink">Sistema de Facturación</h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex h-9 w-9 items-center justify-center rounded-full
-              border border-hairline bg-canvas text-muted transition-colors hover:text-ink"
-            aria-label="Alternar modo oscuro"
-          >
-            {theme === 'dark' ? (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
-
-          {/* User Info */}
-          <div className="flex items-center gap-2 border-l border-hairline pl-3">
-            <div className="text-right">
-              <p className="text-body-sm font-medium text-ink">{session?.fullName}</p>
-              <p className="text-caption text-muted capitalize">{session?.role.toLowerCase()}</p>
-            </div>
-            <button
-              onClick={logout}
-              className="rounded-md border border-hairline px-3 py-1.5 text-body-sm text-muted
-                transition-colors hover:border-error hover:text-error"
-            >
-              Salir
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
+      <TopBar />
       <main className="flex flex-1 overflow-hidden">
-        {/* Sidebar placeholder */}
-        <nav className="w-56 shrink-0 border-r border-hairline bg-surface-soft p-3">
-          <div className="flex flex-col gap-1">
-            {[
-              { label: 'Punto de Venta', icon: ImCart, id: 'pos' },
-              { label: 'Inventario', icon: ImBoxAdd, id: 'inventory' },
-              { label: 'Facturación', icon: ImFileText2, id: 'invoices' },
-              { label: 'Caja', icon: ImCoinDollar, id: 'cash' },
-              { label: 'Reportes', icon: ImStatsBars, id: 'reports' },
-              { label: 'Admin', icon: ImCog, id: 'admin' }
-            ].map((item) => (
-              <button
-                key={item.id}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-body-sm text-muted
-                  transition-colors hover:bg-surface-card hover:text-ink"
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </button>
-            ))}
+        <Sidebar />
+        {activeView === 'pos' ? (
+          <div className="flex flex-1 gap-4 p-4 overflow-hidden">
+            <div className="flex-1 overflow-y-auto">
+              <ProductSearch onSelectProduct={handleSelectProduct} focusKey={focusKey} />
+            </div>
+            <div className="w-96 shrink-0 flex flex-col">
+              <ShoppingCart
+                entries={entries}
+                usdRate={usdRate}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemove={handleRemove}
+                onClear={handleClear}
+                onCheckout={() => setShowPayment(true)}
+              />
+            </div>
           </div>
-        </nav>
-
-        {/* Content Area */}
-        <section className="flex flex-1 items-center justify-center bg-surface-soft/50 p-6">
-          <div className="text-center">
-            <p className="text-title-md text-muted-soft">Punto de Venta</p>
-            <p className="mt-1 text-body-sm text-muted-soft">
-              Seleccione una opción del menú lateral
-            </p>
-          </div>
-        </section>
+        ) : (
+          <ContentArea activeView={activeView} />
+        )}
       </main>
+
+      {/* Payment Modal */}
+      {showPayment && entries.length > 0 && (
+        <PaymentModal
+          entries={entries}
+          usdRate={usdRate}
+          onConfirm={handleCheckout}
+          onCancel={() => setShowPayment(false)}
+        />
+      )}
+
+      {/* Receipt Confirmation */}
+      {lastSale && (
+        <ReceiptConfirm
+          sale={lastSale}
+          onNewSale={handleNewSale}
+        />
+      )}
     </div>
   )
 }

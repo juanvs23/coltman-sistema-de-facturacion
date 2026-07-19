@@ -22,12 +22,43 @@ export interface Product {
   name: string
   description?: string
   type: 'PRODUCT' | 'SERVICE' | 'COMBO'
-  price: number
-  priceUsd?: number
+  price: number       // Precio calculado en moneda local (priceUsd * tasa)
+  priceUsd: number     // Precio en USD (valor primario)
+  cost?: number
   stock: number
-  taxRate: number
+  image?: string      // Ruta de imagen
+  active: boolean
   categoryId?: string
   category?: Category
+  taxes?: ProductTax[] // Impuestos aplicables
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ProductTax {
+  productId: string
+  taxId: string
+  tax?: Tax
+}
+
+export interface Tax {
+  id: string
+  name: string
+  rate: number
+  description?: string
+  active: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface Customer {
+  id: string
+  taxId: string  // RIF (VE), NIT (CO), RFC (MX), RUC (EC)
+  name: string
+  address?: string
+  phone?: string
+  email?: string
+  active: boolean
 }
 
 export interface Category {
