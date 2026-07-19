@@ -54,6 +54,12 @@ interface ElectronAPI {
   getCashSummary: () => Promise<IpcResponse<{ register: unknown; sales: unknown[] }>>
   addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => Promise<IpcResponse>
 
+  // Reports
+  getDailyReport: (date?: string) => Promise<IpcResponse<{ date: string; sales: number; total: number; byMethod: Record<string, number> }>>
+  getProductReport: () => Promise<IpcResponse<Array<{ name: string; quantity: number; total: number }>>>
+  getUserReport: () => Promise<IpcResponse<Array<{ name: string; sales: number; total: number }>>>
+  getIvaReport: (yearMonth?: string) => Promise<IpcResponse<{ period: string; entries: unknown[]; totals: { subtotal: number; taxTotal: number; total: number; discount: number } }>>
+
   // USD Rate
   getUsdRate: () => Promise<IpcResponse<{ rate: number; source: string }>>
 

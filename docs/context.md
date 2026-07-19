@@ -97,10 +97,19 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.7.0)
+## Current State (v0.9.0)
 
 **Branch**: `dev`
 **Date**: 2026-07-19
+
+### Fase 1 — COMPLETA
+- [x] 1.0 Core multi-país + plugin-ve 🇻🇪
+- [x] 1.1 Factura vs Ticket + Empresa
+- [x] 1.2 Rediseño UI del POS
+- [x] 1.3 Descuentos por línea y total
+- [x] 1.4 Historial de ventas + anulación
+- [x] 1.5 Arqueo de caja
+- [x] 1.6 Reportes (diario, por producto, por usuario, libro IVA)
 
 ### Completed
 - [x] Project structure and tooling (Electron + TS + React + Prisma + SQLite)
@@ -172,10 +181,24 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - [x] **Apertura de caja**: modal con monto inicial
 - [x] **Movimientos**: ingresos extra y gastos registrables
 - [x] **Cierre de caja**: conteo de efectivo, diferencia vs esperado
-- [x] **Resumen del día**: balances, ventas por método, movimientos
+
+### Completed (v0.9.0 — Fase 1.6)
+- [x] **Ventas del día**: totales por método de pago, ticket promedio
+- [x] **Ventas por producto**: ranking top 20, cantidad y total
+- [x] **Ventas por usuario**: ranking por vendedor
+- [x] **Libro IVA**: facturas del mes, base imponible, IVA, total (para declaración SENIAT)
 - [x] **62 tests**
 
-### Pending (Fase 1.6+)
+### Fase 1 — COMPLETA 🎉
+Todos los módulos core del MVP están implementados. El sistema permite:
+- POS con barcode, descuentos, factura/ticket, arqueo de caja
+- Inventario con categorías, impuestos múltiples, USD primario
+- Historial de ventas con anulación y detalle
+- Reportes diarios, por producto, por usuario, libro IVA
+- Configuración multi-país con plugin-ve y plugin-co
+- Empresa, usuarios, impuestos, tasa USD
+
+### Pending (Fase 2+)
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación

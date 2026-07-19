@@ -574,6 +574,117 @@ export function registerIpcHandlers(deps: {
     }
   })
 
+  // ─── Reports ──────────────────────────────────────────────
+  ipcMain.handle('reports:daily', async (_event, date?: string) => {
+    try {
+      const d = date ? new Date(date) : new Date()
+      d.setHours(0, 0, 0, 0)
+      const next = new Date(d); next.setDate(next.getDate() + 1)
+
+      const sales = await prisma.sale.findMany({
+        where: { createdAt: { gte: d, lt: next }, status: 'COMPLETED' },
+        include: { user: { select: { fullName: true } } }
+      })
+
+      const byMethod = sales.reduce((acc, s) => {
+        acc[s.paymentMethod] = (acc[s.paymentMethod] ?? 0) + s.total
+        acc.count = (acc.count ?? 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      const total = sales.reduce((sum, s) => sum + s.total, 0)
+
+      return { success: true, data: { date: d.toISOString(), sales: sales.length, total, byMethod } }
+    } catch (error) {
+      return { success: false, error: 'Error al generar reporte diario' }
+    }
+  })
+
+  ipcMain.handle('reports:by-product', async (_event) => {
+    try {
+      const items = await prisma.saleItem.findMany({
+        where: { sale: { status: 'COMPLETED' } },
+        include: { product: { select: { name: true } } }
+      })
+
+      const byProduct = items.reduce((acc, i) => {
+        const name = i.product.name
+        if (!acc[name]) acc[name] = { quantity: 0, total: 0 }
+        acc[name].quantity += i.quantity
+        acc[name].total += i.total
+        return acc
+      }, {} as Record<string, { quantity: number; total: number }>)
+
+      return { success: true, data: Object.entries(byProduct)
+        .map(([name, d]) => ({ name, ...d }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 20)
+      }
+    } catch (error) {
+      return { success: false, error: 'Error al generar reporte por producto' }
+    }
+  })
+
+  ipcMain.handle('reports:by-user', async (_event) => {
+    try {
+      const sales = await prisma.sale.findMany({
+        where: { status: 'COMPLETED' },
+        include: { user: { select: { fullName: true } } }
+      })
+
+      const byUser = sales.reduce((acc, s) => {
+        const name = s.user.fullName
+        if (!acc[name]) acc[name] = { sales: 0, total: 0 }
+        acc[name].sales += 1
+        acc[name].total += s.total
+        return acc
+      }, {} as Record<string, { sales: number; total: number }>)
+
+      return { success: true, data: Object.entries(byUser)
+        .map(([name, d]) => ({ name, ...d }))
+        .sort((a, b) => b.total - a.total)
+      }
+    } catch (error) {
+      return { success: false, error: 'Error al generar reporte por usuario' }
+    }
+  })
+
+  ipcMain.handle('reports:iva', async (_event, yearMonth?: string) => {
+    try {
+      const now = new Date()
+      const [y, m] = yearMonth ? yearMonth.split('-').map(Number) : [now.getFullYear(), now.getMonth()]
+      const start = new Date(y, m - 1, 1)
+      const end = new Date(y, m, 1)
+
+      const sales = await prisma.sale.findMany({
+        where: { createdAt: { gte: start, lt: end }, status: 'COMPLETED', documentType: 'FACTURA' },
+        include: { customer: { select: { name: true, taxId: true } } }
+      })
+
+      const entries = sales.map(s => ({
+        date: s.createdAt.toISOString(),
+        receiptNumber: s.receiptNumber,
+        customerName: s.customer?.name ?? 'Consumidor Final',
+        customerTaxId: s.customer?.taxId ?? '',
+        subtotal: s.subtotal,
+        taxTotal: s.taxTotal,
+        total: s.total,
+        discount: s.discount
+      }))
+
+      const totals = {
+        subtotal: entries.reduce((s, e) => s + e.subtotal, 0),
+        taxTotal: entries.reduce((s, e) => s + e.taxTotal, 0),
+        total: entries.reduce((s, e) => s + e.total, 0),
+        discount: entries.reduce((s, e) => s + e.discount, 0)
+      }
+
+      return { success: true, data: { period: yearMonth ?? `${y}-${String(m).padStart(2, '0')}`, entries, totals } }
+    } catch (error) {
+      return { success: false, error: 'Error al generar libro IVA' }
+    }
+  })
+
   // ─── Printer ─────────────────────────────────────────────
   ipcMain.handle('printer:test', async () => {
     return { success: false, error: 'Not implemented' }

@@ -68,6 +68,15 @@ const electronAPI = {
     ipcRenderer.invoke('users:update', id, input),
   toggleUserActive: (id: string) => ipcRenderer.invoke('users:toggle-active', id),
 
+  // Cash Register
+  addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => ipcRenderer.invoke('cash:add-movement', data),
+
+  // Reports
+  getDailyReport: (date?: string) => ipcRenderer.invoke('reports:daily', date),
+  getProductReport: () => ipcRenderer.invoke('reports:by-product'),
+  getUserReport: () => ipcRenderer.invoke('reports:by-user'),
+  getIvaReport: (yearMonth?: string) => ipcRenderer.invoke('reports:iva', yearMonth),
+
   // Plugins
   listPlugins: () => ipcRenderer.invoke('plugins:list'),
   installPlugin: (source: string) => ipcRenderer.invoke('plugins:install', source),

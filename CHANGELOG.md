@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0] - 2026-07-19
+
+### Added
+- **Reportes**: 4 reportes — ventas del día (totales por método), por producto (top 20), por usuario, libro IVA
+- **Libro IVA**: Resumen mensual de facturas con base imponible, IVA, total — listo para declaración SENIAT
+- Filtro por mes en libro IVA
+- **Fase 1 del MVP completada** 🎉
+
 ## [0.8.0] - 2026-07-19
 
 ### Added
