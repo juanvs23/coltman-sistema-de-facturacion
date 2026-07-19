@@ -5,6 +5,7 @@ import TaxesTab from '../organisms/TaxesTab'
 import CustomersTab from '../organisms/CustomersTab'
 import PluginsTab from '../organisms/PluginsTab'
 import UsdRateTab from '../organisms/UsdRateTab'
+import CompanyTab from '../organisms/CompanyTab'
 
 type SettingsTab = 'users' | 'taxes' | 'customers' | 'usd-rate' | 'security' | 'company' | 'fiscal'
 
@@ -49,11 +50,7 @@ export default function SettingsPage(): JSX.Element {
             <p className="text-body-sm text-muted-soft">Configuración de seguridad — próximamente</p>
           </div>
         )}
-        {activeTab === 'company' && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-body-sm text-muted-soft">Datos de la empresa — próximamente</p>
-          </div>
-        )}
+        {activeTab === 'company' && <CompanyTab />}
         {activeTab === 'fiscal' && (
           <div className="flex h-full items-center justify-center">
             <p className="text-body-sm text-muted-soft">Configuración fiscal — próximamente</p>

@@ -1,6 +1,7 @@
-import type { Product } from '@shared/types'
+import type { Product, Customer, DocumentType } from '@shared/types'
 import CartItem from '../molecules/CartItem'
 import CartSummary from '../molecules/CartSummary'
+import CustomerSearch from '../molecules/CustomerSearch'
 
 export interface CartEntry {
   product: Product
@@ -10,6 +11,9 @@ export interface CartEntry {
 interface ShoppingCartProps {
   entries: CartEntry[]
   usdRate: number
+  documentType: DocumentType
+  selectedCustomer: Customer | null
+  onCustomerChange: (customer: Customer | null) => void
   onUpdateQuantity: (productId: string, quantity: number) => void
   onRemove: (productId: string) => void
   onClear: () => void
@@ -17,14 +21,17 @@ interface ShoppingCartProps {
 }
 
 export default function ShoppingCart({
-  entries, usdRate, onUpdateQuantity, onRemove, onClear, onCheckout
+  entries, usdRate, documentType, selectedCustomer, onCustomerChange,
+  onUpdateQuantity, onRemove, onClear, onCheckout
 }: ShoppingCartProps): JSX.Element {
+  const isFactura = documentType === 'FACTURA'
+
   return (
     <div className="flex h-full flex-col rounded-lg border border-hairline bg-surface-card">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <h3 className="text-body-sm font-medium text-ink">
-          Carrito ({entries.length} item{entries.length !== 1 ? 's' : ''})
+          {isFactura ? 'Factura' : 'Ticket'} ({entries.length} item{entries.length !== 1 ? 's' : ''})
         </h3>
         {entries.length > 0 && (
           <button onClick={onClear}
@@ -33,6 +40,17 @@ export default function ShoppingCart({
           </button>
         )}
       </div>
+
+      {/* Customer search — only in Factura mode */}
+      {isFactura && entries.length > 0 && (
+        <div className="px-4 py-3 border-b border-hairline">
+          <p className="text-caption text-muted mb-2">Cliente</p>
+          <CustomerSearch
+            onSelect={onCustomerChange}
+            selectedCustomer={selectedCustomer}
+          />
+        </div>
+      )}
 
       {/* Empty state */}
       {entries.length === 0 && (

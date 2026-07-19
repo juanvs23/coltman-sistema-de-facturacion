@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Product, Sale } from '@shared/types'
+import type { Product, Sale, Customer, DocumentType } from '@shared/types'
 import { useNavigation } from '../../shared/hooks/useNavigation'
 import { useAuth } from '../../shared/hooks/useAuth'
 import TopBar from '../organisms/TopBar'
@@ -20,6 +20,8 @@ export default function PosPage(): JSX.Element {
   const [focusKey, setFocusKey] = useState(0)
   const [showPayment, setShowPayment] = useState(false)
   const [lastSale, setLastSale] = useState<Sale | null>(null)
+  const [documentType, setDocumentType] = useState<DocumentType>('TICKET')
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
   const loadRate = useCallback(async () => {
     const res = await window.electronAPI.getUsdRate()
@@ -92,10 +94,12 @@ export default function PosPage(): JSX.Element {
         quantity: e.quantity,
         priceUsd: e.product.priceUsd
       })),
+      documentType,
       paymentMethod: data.paymentMethod,
       cashAmount: data.cashAmount,
       usdRate,
-      userId: session.userId
+      userId: session.userId,
+      customerId: selectedCustomer?.id
     })
 
     if (!res.success) throw new Error(res.error ?? 'Error al crear venta')
@@ -107,11 +111,12 @@ export default function PosPage(): JSX.Element {
 
   const handleNewSale = (): void => {
     setLastSale(null)
+    setSelectedCustomer(null)
   }
 
   return (
     <div className="flex h-screen flex-col bg-canvas">
-      <TopBar />
+      <TopBar documentType={documentType} onDocumentTypeChange={setDocumentType} />
       <main className="flex flex-1 overflow-hidden">
         <Sidebar />
         {activeView === 'pos' ? (
@@ -123,6 +128,9 @@ export default function PosPage(): JSX.Element {
               <ShoppingCart
                 entries={entries}
                 usdRate={usdRate}
+                documentType={documentType}
+                selectedCustomer={selectedCustomer}
+                onCustomerChange={setSelectedCustomer}
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemove={handleRemove}
                 onClear={handleClear}
@@ -137,12 +145,14 @@ export default function PosPage(): JSX.Element {
 
       {/* Payment Modal */}
       {showPayment && entries.length > 0 && (
-        <PaymentModal
-          entries={entries}
-          usdRate={usdRate}
-          onConfirm={handleCheckout}
-          onCancel={() => setShowPayment(false)}
-        />
+          <PaymentModal
+            entries={entries}
+            usdRate={usdRate}
+            documentType={documentType}
+            customerId={selectedCustomer?.id}
+            onConfirm={handleCheckout}
+            onCancel={() => setShowPayment(false)}
+          />
       )}
 
       {/* Receipt Confirmation */}

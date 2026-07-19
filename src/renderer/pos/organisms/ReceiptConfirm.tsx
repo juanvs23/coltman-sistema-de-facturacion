@@ -6,6 +6,8 @@ interface ReceiptConfirmProps {
 }
 
 export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps): JSX.Element {
+  const isFactura = sale.documentType === 'FACTURA'
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-sm rounded-lg bg-surface-card p-6 shadow-lg text-center">
@@ -16,7 +18,23 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
         </div>
 
         <h3 className="text-title-sm text-ink">Venta completada</h3>
-        <p className="mt-1 text-body-sm text-muted">Factura #{(sale as unknown as { receiptNumber: number }).receiptNumber}</p>
+        <div className="mt-1 space-y-0.5">
+          <p className="text-body-sm text-muted">
+            <span className={`inline-block rounded px-2 py-0.5 text-caption font-medium ${isFactura ? 'bg-primary/10 text-primary' : 'bg-muted/10 text-muted'}`}>
+              {isFactura ? 'FACTURA' : 'TICKET'}
+            </span>
+            {' N.° '}{sale.receiptNumber}
+          </p>
+          {isFactura && sale.customer && (
+            <div className="text-caption text-muted-soft">
+              <p className="font-medium text-ink">{sale.customer.name}</p>
+              <p className="font-mono">{sale.customer.taxId}</p>
+            </div>
+          )}
+          {!isFactura && (
+            <p className="text-caption text-muted-soft">Consumidor Final</p>
+          )}
+        </div>
 
         <div className="my-4 border-t border-b border-hairline py-3 space-y-1">
           <div className="flex justify-between text-body-sm">

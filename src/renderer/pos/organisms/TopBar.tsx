@@ -1,13 +1,43 @@
+import type { DocumentType } from '@shared/types'
 import { useAuth } from '../../shared/hooks/useAuth'
 import { useTheme } from '../../shared/hooks/useTheme'
 
-export default function TopBar(): JSX.Element {
+interface TopBarProps {
+  documentType: DocumentType
+  onDocumentTypeChange: (type: DocumentType) => void
+}
+
+export default function TopBar({ documentType, onDocumentTypeChange }: TopBarProps): JSX.Element {
   const { session, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-hairline px-4">
       <div className="flex items-center gap-3">
+        {/* Document type toggle */}
+        <div className="flex rounded-md border border-hairline overflow-hidden">
+          <button
+            onClick={() => onDocumentTypeChange('FACTURA')}
+            className={`px-3 py-1 text-caption font-medium transition-colors ${
+              documentType === 'FACTURA'
+                ? 'bg-primary text-on-primary'
+                : 'text-muted hover:bg-surface-soft hover:text-ink'
+            }`}
+          >
+            Factura
+          </button>
+          <button
+            onClick={() => onDocumentTypeChange('TICKET')}
+            className={`px-3 py-1 text-caption font-medium transition-colors ${
+              documentType === 'TICKET'
+                ? 'bg-primary text-on-primary'
+                : 'text-muted hover:bg-surface-soft hover:text-ink'
+            }`}
+          >
+            Ticket
+          </button>
+        </div>
+
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
           <span className="text-body-sm font-semibold text-on-primary">SF</span>
         </div>
