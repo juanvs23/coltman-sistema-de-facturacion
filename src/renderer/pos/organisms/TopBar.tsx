@@ -5,11 +5,16 @@ import { useTheme } from '../../shared/hooks/useTheme'
 interface TopBarProps {
   documentType: DocumentType
   onDocumentTypeChange: (type: DocumentType) => void
+  usdRate: number
+  receiptNumber: number
 }
 
-export default function TopBar({ documentType, onDocumentTypeChange }: TopBarProps): JSX.Element {
+export default function TopBar({ documentType, onDocumentTypeChange, usdRate, receiptNumber }: TopBarProps): JSX.Element {
   const { session, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+
+  const docLabel = documentType === 'FACTURA' ? 'Factura' : 'Ticket'
+  const paddedNumber = String(receiptNumber).padStart(4, '0')
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-hairline px-4">
@@ -42,6 +47,21 @@ export default function TopBar({ documentType, onDocumentTypeChange }: TopBarPro
           <span className="text-body-sm font-semibold text-on-primary">SF</span>
         </div>
         <h1 className="text-title-md text-ink">Sistema de Facturación</h1>
+
+        {/* USD Rate + Receipt number */}
+        <div className="flex items-center gap-3 border-l border-hairline pl-3 ml-1">
+          <div className="rounded-md bg-surface-soft px-3 py-1">
+            <span className="text-caption text-muted">Tasa: </span>
+            <span className="text-caption font-mono font-medium text-ink">
+              Bs. {usdRate.toFixed(2)}
+            </span>
+          </div>
+          <div className="rounded-md bg-primary/10 px-3 py-1">
+            <span className="text-caption font-mono font-medium text-primary">
+              {docLabel} N° {paddedNumber}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

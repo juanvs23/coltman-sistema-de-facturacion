@@ -5,6 +5,8 @@ import { useAuth } from '../../shared/hooks/useAuth'
 import TopBar from '../organisms/TopBar'
 import Sidebar from '../organisms/Sidebar'
 import ContentArea from '../organisms/ContentArea'
+import BarcodeInput from '../organisms/BarcodeInput'
+import ShortcutBar from '../organisms/ShortcutBar'
 import ProductSearch from '../organisms/ProductSearch'
 import ShoppingCart from '../organisms/ShoppingCart'
 import PaymentModal from '../organisms/PaymentModal'
@@ -17,27 +19,36 @@ export default function PosPage(): JSX.Element {
   const { session } = useAuth()
   const [entries, setEntries] = useState<CartEntry[]>([])
   const [usdRate, setUsdRate] = useState(0)
+  const [receiptNumber, setReceiptNumber] = useState(0)
   const [focusKey, setFocusKey] = useState(0)
   const [showPayment, setShowPayment] = useState(false)
   const [lastSale, setLastSale] = useState<Sale | null>(null)
   const [documentType, setDocumentType] = useState<DocumentType>('TICKET')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
+  const isModalOpen = showPayment || lastSale !== null
+
   const loadRate = useCallback(async () => {
     const res = await window.electronAPI.getUsdRate()
     if (res.success && res.data) setUsdRate(res.data.rate)
   }, [])
 
+  const loadReceiptNumber = useCallback(async () => {
+    const res = await window.electronAPI.getNextReceiptNumber()
+    if (res.success && res.data) setReceiptNumber(res.data)
+  }, [])
+
   useEffect(() => {
     loadRate()
+    loadReceiptNumber()
     const interval = setInterval(loadRate, 300000)
     return () => clearInterval(interval)
-  }, [loadRate])
+  }, [loadRate, loadReceiptNumber])
 
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
-      if (activeView !== 'pos') return
+      if (activeView !== 'pos' || isModalOpen) return
       if (e.key === 'F2') {
         e.preventDefault()
         setFocusKey(k => k + 1)
@@ -53,7 +64,12 @@ export default function PosPage(): JSX.Element {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [entries, activeView])
+  }, [entries, activeView, isModalOpen])
+
+  const handleShortcut = (key: string): void => {
+    if (key === 'F2') setFocusKey(k => k + 1)
+    if (key === 'F4' && entries.length > 0) setShowPayment(true)
+  }
 
   const handleSelectProduct = (product: Product): void => {
     setEntries(prev => {
@@ -107,6 +123,7 @@ export default function PosPage(): JSX.Element {
     setLastSale(res.data ?? null)
     setShowPayment(false)
     setEntries([])
+    loadReceiptNumber()
   }
 
   const handleNewSale = (): void => {
@@ -116,26 +133,43 @@ export default function PosPage(): JSX.Element {
 
   return (
     <div className="flex h-screen flex-col bg-canvas">
-      <TopBar documentType={documentType} onDocumentTypeChange={setDocumentType} />
+      <TopBar
+        documentType={documentType}
+        onDocumentTypeChange={setDocumentType}
+        usdRate={usdRate}
+        receiptNumber={receiptNumber}
+      />
       <main className="flex flex-1 overflow-hidden">
         <Sidebar />
         {activeView === 'pos' ? (
-          <div className="flex flex-1 gap-4 p-4 overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
-              <ProductSearch onSelectProduct={handleSelectProduct} focusKey={focusKey} />
-            </div>
-            <div className="w-96 shrink-0 flex flex-col">
-              <ShoppingCart
-                entries={entries}
-                usdRate={usdRate}
-                documentType={documentType}
-                selectedCustomer={selectedCustomer}
-                onCustomerChange={setSelectedCustomer}
-                onUpdateQuantity={handleUpdateQuantity}
-                onRemove={handleRemove}
-                onClear={handleClear}
-                onCheckout={() => setShowPayment(true)}
-              />
+          <div className="flex flex-1 flex-col gap-3 p-4 overflow-hidden">
+            {/* Barcode input area */}
+            <BarcodeInput
+              onProductSelect={handleSelectProduct}
+              disabled={isModalOpen}
+            />
+
+            {/* Shortcut bar */}
+            <ShortcutBar onShortcut={handleShortcut} />
+
+            {/* Search results + Cart */}
+            <div className="flex flex-1 gap-4 overflow-hidden">
+              <div className="flex-1 overflow-y-auto">
+                <ProductSearch onSelectProduct={handleSelectProduct} focusKey={focusKey} />
+              </div>
+              <div className="w-96 shrink-0 flex flex-col">
+                <ShoppingCart
+                  entries={entries}
+                  usdRate={usdRate}
+                  documentType={documentType}
+                  selectedCustomer={selectedCustomer}
+                  onCustomerChange={setSelectedCustomer}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemove={handleRemove}
+                  onClear={handleClear}
+                  onCheckout={() => setShowPayment(true)}
+                />
+              </div>
             </div>
           </div>
         ) : (
@@ -145,14 +179,14 @@ export default function PosPage(): JSX.Element {
 
       {/* Payment Modal */}
       {showPayment && entries.length > 0 && (
-          <PaymentModal
-            entries={entries}
-            usdRate={usdRate}
-            documentType={documentType}
-            customerId={selectedCustomer?.id}
-            onConfirm={handleCheckout}
-            onCancel={() => setShowPayment(false)}
-          />
+        <PaymentModal
+          entries={entries}
+          usdRate={usdRate}
+          documentType={documentType}
+          customerId={selectedCustomer?.id}
+          onConfirm={handleCheckout}
+          onCancel={() => setShowPayment(false)}
+        />
       )}
 
       {/* Receipt Confirmation */}

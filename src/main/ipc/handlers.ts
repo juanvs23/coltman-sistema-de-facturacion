@@ -379,6 +379,19 @@ export function registerIpcHandlers(deps: {
     return { success: false, error: 'Not implemented' }
   })
 
+  ipcMain.handle('sales:next-receipt-number', async () => {
+    try {
+      const last = await prisma.sale.findFirst({
+        orderBy: { receiptNumber: 'desc' },
+        select: { receiptNumber: true }
+      })
+      const nextNumber = (last?.receiptNumber ?? 0) + 1
+      return { success: true, data: nextNumber }
+    } catch (error) {
+      return { success: false, error: 'Error al obtener número de factura' }
+    }
+  })
+
   // ─── Cash Register ───────────────────────────────────────
   ipcMain.handle('cash:open', async (_event, balance) => {
     return { success: false, error: 'Not implemented' }

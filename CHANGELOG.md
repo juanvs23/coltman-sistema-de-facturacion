@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0] - 2026-07-19
+
+### Added
+- **Rediseño POS**: Layout profesional de caja registradora con barcode-first
+- **BarcodeInput**: Campo grande con autofocus permanente, Enter para agregar producto al carrito
+- **ShortcutBar**: Barra de atajos F1-F9 visible (F5-F9 deshabilitados con tooltip "Próximamente")
+- **N° factura/ticket en tiempo real**: Correlativo visible en TopBar durante la transacción
+- **Tasa USD en encabezado**: Visible permanentemente en TopBar como referencia
+- **getNextReceiptNumber**: Handler IPC para preview de correlativo (read-only)
+- **62 tests** (de 51)
+
+### Changed
+- **PosPage**: Layout reestructurado de flex row a grid vertical (barcode → shortcuts → search/grid | cart)
+- **TopBar**: Agregados indicadores de tasa USD + número de recibo
+- **ProductSearch**: Se mantiene intacto para búsqueda por nombre (F2)
+- **ShoppingCart, CartItem, CartSummary, PaymentModal**: Sin cambios
+
 ## [0.4.0] - 2026-07-19
 
 ### Added

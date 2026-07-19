@@ -24,6 +24,7 @@ window.electronAPI = {
   } }),
   listSales: async () => ({ success: false, error: 'Mock: Not implemented' }),
   cancelSale: async () => ({ success: false, error: 'Mock: Not implemented' }),
+  getNextReceiptNumber: async () => ({ success: true, data: 42 }),
   openRegister: async () => ({ success: false, error: 'Mock: Not implemented' }),
   closeRegister: async () => ({ success: false, error: 'Mock: Not implemented' }),
   getCashSummary: async () => ({ success: false, error: 'Mock: Not implemented' }),

@@ -97,9 +97,9 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.4.0)
+## Current State (v0.5.0)
 
-**Branch**: `feat/factura-vs-ticket` (tracker → dev luego de QA)
+**Branch**: `feat/pos-ui-redesign` → `feat/factura-vs-ticket` (tracker)
 **Date**: 2026-07-19
 
 ### Completed
@@ -146,9 +146,17 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - [x] **Pestaña Empresa**: CompanyConfig (razón social, RIF, dirección, teléfono, email)
 - [x] **Migración**: CompanyConfig creado, campos migrados desde FiscalConfig
 - [x] **getReceiptFooter(type)**: pie de recibo por tipo de documento
-- [x] **51 tests**
 
-### Pending (Fase 1.2+)
+### Completed (v0.5.0 — Fase 1.2)
+- [x] **Rediseño POS**: layout profesional con barcode-first
+- [x] **BarcodeInput**: input grande con autofocus permanente, Enter para agregar producto
+- [x] **ShortcutBar**: barra de atajos F1-F9 visible (F5-F9 disabled con "Próximamente")
+- [x] **N° factura/ticket visible**: correlativo en TopBar durante la transacción
+- [x] **Tasa USD fija**: en el encabezado (TopBar)
+- [x] **getNextReceiptNumber**: handler IPC para preview de correlativo
+- [x] **62 tests**
+
+### Pending (Fase 1.3+)
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación

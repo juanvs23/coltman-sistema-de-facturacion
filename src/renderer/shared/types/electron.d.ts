@@ -44,6 +44,7 @@ interface ElectronAPI {
   }) => Promise<IpcResponse<Sale>>
   listSales: (filters?: unknown) => Promise<IpcResponse<Sale[]>>
   cancelSale: (id: string, userId: string) => Promise<IpcResponse<Sale>>
+  getNextReceiptNumber: () => Promise<IpcResponse<number>>
 
   // Cash Register
   openRegister: (balance: number) => Promise<IpcResponse>
