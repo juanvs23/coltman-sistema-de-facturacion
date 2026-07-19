@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0] - 2026-07-19
+
+### Added
+- **Arqueo de caja**: Apertura, movimientos (ingresos/gastos) y cierre con diferencia
+- **OpenRegisterModal**: Monto inicial de caja
+- **CloseRegisterModal**: Conteo de efectivo, diferencia vs esperado, alerta si > 1 Bs.
+- **CashMovementForm**: Registro de ingresos extra y gastos
+- **cash:open, cash:close, cash:summary, cash:add-movement** IPC handlers
+- Dashboard de caja: balances, ventas del día por método, esperado en caja, log de movimientos
+
 ## [0.7.0] - 2026-07-19
 
 ### Added

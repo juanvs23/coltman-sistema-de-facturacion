@@ -29,9 +29,10 @@ window.electronAPI = {
     customerId: null, customer: null, items: [], notes: null, createdAt: new Date().toISOString()
   } }),
   getNextReceiptNumber: async () => ({ success: true, data: 42 }),
-  openRegister: async () => ({ success: false, error: 'Mock: Not implemented' }),
-  closeRegister: async () => ({ success: false, error: 'Mock: Not implemented' }),
-  getCashSummary: async () => ({ success: false, error: 'Mock: Not implemented' }),
+  openRegister: async () => ({ success: true, data: { id: 'reg-1' } }),
+  closeRegister: async () => ({ success: true }),
+  getCashSummary: async () => ({ success: true, data: { register: null, sales: [] } }),
+  addCashMovement: async () => ({ success: true }),
   getUsdRate: async () => ({ success: false, error: 'Mock: Not implemented' }),
   getConfig: async () => ({ success: false, error: 'Mock: Not implemented' }),
   updateConfig: async () => ({ success: false, error: 'Mock: Not implemented' }),

@@ -41,8 +41,9 @@ const electronAPI = {
 
   // Cash Register
   openRegister: (balance: number) => ipcRenderer.invoke('cash:open', balance),
-  closeRegister: (registerId: string) => ipcRenderer.invoke('cash:close', registerId),
-  getCashSummary: (date: string) => ipcRenderer.invoke('cash:summary', date),
+  closeRegister: (registerId: string, closingBalance: number, userId: string) => ipcRenderer.invoke('cash:close', registerId, closingBalance, userId),
+  getCashSummary: () => ipcRenderer.invoke('cash:summary'),
+  addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => ipcRenderer.invoke('cash:add-movement', data),
 
   // USD Rate
   getUsdRate: () => ipcRenderer.invoke('usd:rate'),

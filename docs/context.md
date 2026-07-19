@@ -164,13 +164,18 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 
 ### Completed (v0.7.0 — Fase 1.4)
 - [x] **PrismaSaleRepository**: repositorio hexagonal para ventas
-- [x] **Historial de ventas**: tabla con filtros (fecha, método de pago), búsqueda, detalle
-- [x] **Detalle de factura**: modal con productos, totales, cliente, notas, estado
-- [x] **Anulación de ventas**: con motivo obligatorio, control de usuario, restauración de stock
-- [x] **CancelSaleModal**: modal de anulación con motivo
+- [x] **Historial de ventas**: tabla con filtros (fecha, método de pago)
+- [x] **Detalle de factura**: modal con productos, totales, cliente, notas
+- [x] **Anulación de ventas**: con motivo, control de usuario, restauración de stock
+
+### Completed (v0.8.0 — Fase 1.5)
+- [x] **Apertura de caja**: modal con monto inicial
+- [x] **Movimientos**: ingresos extra y gastos registrables
+- [x] **Cierre de caja**: conteo de efectivo, diferencia vs esperado
+- [x] **Resumen del día**: balances, ventas por método, movimientos
 - [x] **62 tests**
 
-### Pending (Fase 1.5+)
+### Pending (Fase 1.6+)
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación

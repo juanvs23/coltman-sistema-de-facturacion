@@ -50,8 +50,9 @@ interface ElectronAPI {
 
   // Cash Register
   openRegister: (balance: number) => Promise<IpcResponse>
-  closeRegister: (registerId: string) => Promise<IpcResponse>
-  getCashSummary: (date: string) => Promise<IpcResponse>
+  closeRegister: (registerId: string, closingBalance: number, userId: string) => Promise<IpcResponse>
+  getCashSummary: () => Promise<IpcResponse<{ register: unknown; sales: unknown[] }>>
+  addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => Promise<IpcResponse>
 
   // USD Rate
   getUsdRate: () => Promise<IpcResponse<{ rate: number; source: string }>>

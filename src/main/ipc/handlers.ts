@@ -421,16 +421,97 @@ export function registerIpcHandlers(deps: {
   })
 
   // ─── Cash Register ───────────────────────────────────────
-  ipcMain.handle('cash:open', async (_event, balance) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('cash:open', async (_event, balance: number) => {
+    try {
+      const register = await prisma.cashRegister.create({
+        data: {
+          openingBalance: balance,
+          date: new Date(),
+          movements: {
+            create: {
+              type: 'OPENING',
+              amount: balance,
+              description: 'Apertura de caja',
+              userId: '', // será sobreescrito por el frontend
+              registerId: '' // placeholder
+            }
+          }
+        }
+      })
+      return { success: true, data: register }
+    } catch (error) {
+      return { success: false, error: 'Error al abrir caja' }
+    }
   })
 
-  ipcMain.handle('cash:close', async (_event, registerId) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('cash:close', async (_event, registerId: string, closingBalance: number, userId: string) => {
+    try {
+      const register = await prisma.$transaction(async (tx) => {
+        await tx.cashMovement.create({
+          data: {
+            type: 'CLOSING',
+            amount: closingBalance,
+            description: 'Cierre de caja',
+            userId,
+            registerId
+          }
+        })
+        return tx.cashRegister.update({
+          where: { id: registerId },
+          data: {
+            closingBalance,
+            closedAt: new Date(),
+            closedById: userId
+          },
+          include: { movements: true }
+        })
+      })
+      return { success: true, data: register }
+    } catch (error) {
+      return { success: false, error: 'Error al cerrar caja' }
+    }
   })
 
-  ipcMain.handle('cash:summary', async (_event, date) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('cash:summary', async (_event) => {
+    try {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const register = await prisma.cashRegister.findFirst({
+        where: { date: { gte: today } },
+        include: {
+          movements: { include: { user: { select: { fullName: true } } } },
+          closedBy: { select: { fullName: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+      // Also get today's sales
+      const sales = await prisma.sale.findMany({
+        where: { createdAt: { gte: today }, status: 'COMPLETED' },
+        select: { paymentMethod: true, total: true }
+      })
+      return { success: true, data: { register, sales } }
+    } catch (error) {
+      return { success: false, error: 'Error al obtener resumen' }
+    }
+  })
+
+  ipcMain.handle('cash:add-movement', async (_event, data: {
+    registerId: string; type: string; amount: number; description?: string; userId: string
+  }) => {
+    try {
+      const movement = await prisma.cashMovement.create({
+        data: {
+          type: data.type as never,
+          amount: data.amount,
+          description: data.description,
+          userId: data.userId,
+          registerId: data.registerId
+        }
+      })
+      return { success: true, data: movement }
+    } catch (error) {
+      return { success: false, error: 'Error al registrar movimiento' }
+    }
   })
 
   // ─── USD Rate ────────────────────────────────────────────
