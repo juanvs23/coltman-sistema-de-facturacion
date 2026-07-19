@@ -7,7 +7,7 @@ export interface CountryData {
   currencySymbol: string
   currencyCode: string
   paymentMethods: Array<{ id: string; label: string }>
-  receiptFooter: string[]
+  getReceiptFooter: (type: 'FACTURA' | 'TICKET') => string[]
   validateTaxId: (taxId: string) => TaxIdValidation
   formatTaxId: (raw: string) => string
   formatCurrency: (amount: number) => string
@@ -24,7 +24,7 @@ const NEUTRAL: CountryData = {
     { id: 'DEBIT_CARD', label: 'Tarjeta de Débito' },
     { id: 'CREDIT_CARD', label: 'Tarjeta de Crédito' }
   ],
-  receiptFooter: ['Gracias por su compra'],
+  getReceiptFooter: () => ['Gracias por su compra'],
   validateTaxId: () => ({ valid: true }),
   formatTaxId: (raw: string) => raw,
   formatCurrency: (amount: number) => `$${amount.toFixed(2)}`
@@ -46,7 +46,7 @@ async function loadCountryData(): Promise<CountryData> {
         return {
           code: 'VE', taxIdLabel: ve.TAX_ID_LABEL, currencySymbol: ve.CURRENCY_SYMBOL,
           currencyCode: ve.CURRENCY_CODE, paymentMethods: ve.PAYMENT_METHODS,
-          receiptFooter: ve.RECEIPT_FOOTER, validateTaxId: ve.validateRif,
+          getReceiptFooter: ve.getReceiptFooter, validateTaxId: ve.validateRif,
           formatTaxId: ve.formatRif, formatCurrency: ve.formatCurrency
         }
       }
@@ -55,7 +55,7 @@ async function loadCountryData(): Promise<CountryData> {
         return {
           code: 'CO', taxIdLabel: co.TAX_ID_LABEL, currencySymbol: co.CURRENCY_SYMBOL,
           currencyCode: co.CURRENCY_CODE, paymentMethods: co.PAYMENT_METHODS,
-          receiptFooter: co.RECEIPT_FOOTER, validateTaxId: co.validateNit,
+          getReceiptFooter: () => co.RECEIPT_FOOTER, validateTaxId: co.validateNit,
           formatTaxId: co.formatNit, formatCurrency: co.formatCurrency
         }
       }

@@ -115,6 +115,11 @@ enum SaleStatus {
   REFUNDED      // Reembolsada
 }
 
+enum DocumentType {
+  FACTURA       // Factura fiscal — requiere cliente
+  TICKET        // Ticket consumidor final — sin datos de cliente
+}
+
 enum PaymentMethod {
   CASH          // Efectivo
   TRANSFER      // Transferencia/Pago Móvil
@@ -125,24 +130,25 @@ enum PaymentMethod {
 }
 
 model Sale {
-  id              String      @id @default(uuid())
-  receiptNumber   Int         @unique // Número de factura correlativo
-  status          SaleStatus  @default(ACTIVE)
-  subtotal        Float       // Suma de items sin IVA
-  taxTotal        Float       // Suma de IVA
-  discount        Float       @default(0)
-  total           Float       // Monto final
+  id              String       @id @default(uuid())
+  receiptNumber   Int          @unique // Número de factura correlativo
+  documentType    DocumentType @default(TICKET)
+  status          SaleStatus   @default(ACTIVE)
+  subtotal        Float        // Suma de items sin IVA
+  taxTotal        Float        // Suma de IVA
+  discount        Float        @default(0)
+  total           Float        // Monto final
   paymentMethod   PaymentMethod
-  cashAmount      Float?      // Monto en efectivo (para vueltos)
-  changeAmount    Float?      // Vuelto
-  usdRate         Float?      // Tasa del dólar al momento de la venta
+  cashAmount      Float?       // Monto en efectivo (para vueltos)
+  changeAmount    Float?       // Vuelto
+  usdRate         Float?       // Tasa del dólar al momento de la venta
   notes           String?
   userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  createdAt       DateTime    @default(now())
+  user            User         @relation(fields: [userId], references: [id])
+  createdAt       DateTime     @default(now())
   cancelledAt     DateTime?
   cancelledById   String?
-  cancelledBy     User?       @relation("CancelledSale", fields: [cancelledById], references: [id])
+  cancelledBy     User?        @relation("CancelledSale", fields: [cancelledById], references: [id])
 
   items SaleItem[]
   customerId   String?
@@ -206,18 +212,28 @@ model CashMovement {
   @@index([registerId])
 }
 
+// ─── Company Configuration ───────────────────────────────────
+
+model CompanyConfig {
+  id           String   @id @default("default")
+  businessName String
+  taxId        String?
+  address      String?
+  phone        String?
+  email        String?
+  logo         String?  // Ruta de archivo de imagen
+  updatedAt    DateTime @updatedAt
+}
+
 // ─── Fiscal & Configuration ──────────────────────────────────
 
 model FiscalConfig {
-  id               String @id @default("default")
-  printerType      String // "bixolon", "epson", "sharp", "sam4s"
-  printerPort      String // Puerto COM, USB, etc.
-  printerEnabled   Boolean @default(false)
-  taxPayerId       String? // RIF
-  businessName     String? // Razón social
-  fiscalAddress    String?
-  seniatEnabled    Boolean @default(false)
-  autoSendSeniat   Boolean @default(false)
+  id               String   @id @default("default")
+  printerType      String   // "bixolon", "epson", "sharp", "sam4s"
+  printerPort      String   // Puerto COM, USB, etc.
+  printerEnabled   Boolean  @default(false)
+  seniatEnabled    Boolean  @default(false)
+  autoSendSeniat   Boolean  @default(false)
   updatedAt        DateTime @updatedAt
 }
 

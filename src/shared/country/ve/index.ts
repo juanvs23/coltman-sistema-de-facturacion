@@ -22,12 +22,17 @@ export const PAYMENT_METHODS = [
   { id: 'MIXED', label: 'Mixto' }
 ]
 
-/** Pie de recibo */
-export const RECEIPT_FOOTER = [
-  '¡Gracias por su compra!',
-  'Exija su factura — SENIAT',
-  'Este documento no es un comprobante fiscal'
-]
+/** Pie de recibo según tipo de documento */
+export function getReceiptFooter(type: 'FACTURA' | 'TICKET'): string[] {
+  const base = ['¡Gracias por su compra!']
+  if (type === 'FACTURA') {
+    return [...base, 'Original — Cliente', 'Copia — Emisor', 'Exija su factura — SENIAT']
+  }
+  return [...base, 'Exija su factura — SENIAT', 'Este documento no es un comprobante fiscal']
+}
+
+/** Alias para compatibilidad — usa TICKET por defecto */
+export const RECEIPT_FOOTER = getReceiptFooter('TICKET')
 
 /** Formatea un monto en la moneda del país */
 export function formatCurrency(amount: number): string {

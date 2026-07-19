@@ -1,5 +1,5 @@
 import type { ICountryPlugin } from '@sistema-facturacion/plugin-api'
-import { validateRif, formatRif } from '@shared/country/ve'
+import { validateRif, formatRif, getReceiptFooter } from '@shared/country/ve'
 
 export class VenezuelaPlugin implements ICountryPlugin {
   countryCode = 'VE'
@@ -39,14 +39,9 @@ export class VenezuelaPlugin implements ICountryPlugin {
     ]
   }
 
-  getReceiptFooter() {
-    return {
-      lines: [
-        '¡Gracias por su compra!',
-        'Exija su factura — SENIAT',
-        'Este documento no es una factura fiscal'
-      ]
-    }
+  getReceiptFooter(documentType?: 'FACTURA' | 'TICKET') {
+    const lines = getReceiptFooter(documentType ?? 'TICKET')
+    return { lines }
   }
 
   getDefaultExchangeRate(): number | null {

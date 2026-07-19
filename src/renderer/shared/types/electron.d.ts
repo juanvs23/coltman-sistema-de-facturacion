@@ -1,4 +1,4 @@
-import type { IpcResponse, AuthSession, LoginRequest, Product, Sale } from '@shared/types'
+import type { IpcResponse, AuthSession, LoginRequest, Product, Sale, CompanyConfig } from '@shared/types'
 
 interface ElectronAPI {
   // Auth
@@ -35,6 +35,7 @@ interface ElectronAPI {
   // Sales
   createSale: (sale: {
     items: Array<{ productId: string; quantity: number; priceUsd: number }>
+    documentType: import('@shared/types').DocumentType
     paymentMethod: string
     cashAmount?: number
     usdRate: number
@@ -55,6 +56,10 @@ interface ElectronAPI {
   // Config
   getConfig: () => Promise<IpcResponse<{ usdRate: number; usdRateSource: string; currencySymbol: string } & Record<string, unknown>>>
   updateConfig: (config: Record<string, unknown>) => Promise<IpcResponse>
+
+  // Company
+  getCompanyConfig: () => Promise<IpcResponse<CompanyConfig>>
+  updateCompanyConfig: (config: Partial<CompanyConfig>) => Promise<IpcResponse<CompanyConfig>>
 
   // Printer
   testPrinter: () => Promise<IpcResponse>

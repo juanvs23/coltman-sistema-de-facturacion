@@ -71,17 +71,22 @@ export interface SaleItem {
   id: string
   quantity: number
   price: number
+  priceUsd?: number
   subtotal: number
   taxRate: number
   taxAmount: number
+  taxBreakdown?: string
   total: number
   productId: string
   product?: Product
 }
 
+export type DocumentType = 'FACTURA' | 'TICKET'
+
 export interface Sale {
   id: string
   receiptNumber: number
+  documentType: DocumentType
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED'
   subtotal: number
   taxTotal: number
@@ -91,6 +96,8 @@ export interface Sale {
   usdRate?: number
   userId: string
   user?: User
+  customerId?: string
+  customer?: Customer
   items: SaleItem[]
   createdAt: string
 }
@@ -113,11 +120,26 @@ export interface CreateSaleRequest {
     productId: string
     quantity: number
     price: number
+    priceUsd: number
   }>
+  documentType: DocumentType
   paymentMethod: Sale['paymentMethod']
   cashAmount?: number
   usdRate?: number
   notes?: string
+  userId: string
+  customerId?: string
+}
+
+// ─── Company Configuration ───────────────────────────────────
+
+export interface CompanyConfig {
+  businessName: string
+  taxId?: string
+  address?: string
+  phone?: string
+  email?: string
+  logo?: string
 }
 
 // ─── USD Rate ────────────────────────────────────────────────
