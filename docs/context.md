@@ -97,9 +97,9 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.3.0)
+## Current State (v0.4.0)
 
-**Branch**: `dev`
+**Branch**: `feat/factura-vs-ticket` (tracker → dev luego de QA)
 **Date**: 2026-07-19
 
 ### Completed
@@ -138,10 +138,18 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - [x] **useCountry() hook**: reactivo al país activo
 - [x] **45 tests**
 
-### Pending (Fase 1)
-- [ ] **Factura vs Ticket** — toggle + datos cliente visibles en POS
+### Completed (v0.4.0 — Fase 1.1)
+- [x] **Factura vs Ticket**: toggle visual en TopBar, DocumentType enum en Sale
+- [x] **Customer checkout**: búsqueda rápida de cliente en modo Factura (RIF + nombre)
+- [x] **Validación backend**: sales:create rechaza FACTURA sin customerId
+- [x] **Recibo**: distingue FACTURA (cliente + leyenda) de TICKET (consumidor final)
+- [x] **Pestaña Empresa**: CompanyConfig (razón social, RIF, dirección, teléfono, email)
+- [x] **Migración**: CompanyConfig creado, campos migrados desde FiscalConfig
+- [x] **getReceiptFooter(type)**: pie de recibo por tipo de documento
+- [x] **51 tests**
+
+### Pending (Fase 1.2+)
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
-- [ ] **Pestaña Empresa** en Settings
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación
 - [ ] **Arqueo de caja** (apertura, movimientos, cierre)

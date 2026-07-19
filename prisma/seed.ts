@@ -224,15 +224,26 @@ async function main(): Promise<void> {
 
   console.log('  ✅ AppConfig created')
 
+  // ── Company Config (default) ──────────────────────────────────
+  await prisma.companyConfig.create({
+    data: {
+      businessName: 'Mi Negocio C.A.',
+      taxId: 'J-12345678-9',
+      address: 'Av. Principal, Local 1, Caracas',
+      phone: '+58 212 1234567',
+      email: 'contacto@minegocio.com',
+      logo: ''
+    }
+  })
+
+  console.log('  ✅ CompanyConfig created')
+
   // ── Fiscal Config (default) ──────────────────────────────────
   await prisma.fiscalConfig.create({
     data: {
       printerType: 'bixolon',
       printerPort: 'USB',
       printerEnabled: false,
-      taxPayerId: 'J-12345678-9',
-      businessName: 'Mi Negocio C.A.',
-      fiscalAddress: 'Av. Principal, Local 1, Caracas',
       seniatEnabled: false,
       autoSendSeniat: false
     }

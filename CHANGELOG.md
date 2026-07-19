@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.0] - 2026-07-19
+
+### Added
+- **Factura vs Ticket**: Toggle visual Factura/Ticket en TopBar del POS
+- **DocumentType enum**: `FACTURA` | `TICKET` en modelo Sale, con validación backend
+- **Customer checkout**: Búsqueda rápida de cliente (RIF/nombre) integrada en flujo POS, visible solo en modo Factura
+- **CompanyConfig**: Nuevo modelo con razón social, RIF, dirección, teléfono, email
+- **Pestaña Empresa**: Formulario completo en Settings reemplazando el placeholder
+- **Validación**: `sales:create` rechaza facturas sin cliente con código `CUSTOMER_REQUIRED_FOR_FACTURA`
+- **Recibo contextual**: Muestra tipo de documento, datos del cliente (factura) o "Consumidor Final" (ticket)
+- **getReceiptFooter(type)**: Pie de recibo por tipo de documento
+- **51 tests** (de 45)
+
+### Changed
+- `FiscalConfig`: Campos de empresa (taxPayerId, businessName, fiscalAddress) migrados a `CompanyConfig`
+- `CreateSaleRequest`: Agregados `documentType`, `userId`, `customerId`
+- `useCountry` hook: `receiptFooter` → `getReceiptFooter(type)`
+
 ## [0.1.1] - 2026-07-18
 
 ### Added
