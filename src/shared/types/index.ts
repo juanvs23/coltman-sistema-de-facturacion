@@ -95,12 +95,27 @@ export interface Sale {
   total: number
   paymentMethod: 'CASH' | 'TRANSFER' | 'DEBIT_CARD' | 'CREDIT_CARD' | 'DIVISA' | 'MIXED'
   usdRate?: number
+  notes?: string
   userId: string
   user?: User
   customerId?: string
   customer?: Customer
   items: SaleItem[]
   createdAt: string
+  cancelledAt?: string
+  cancelledById?: string
+  cancelledBy?: User
+}
+
+export interface SaleFilters {
+  from?: string
+  to?: string
+  paymentMethod?: string
+  userId?: string
+  customerId?: string
+  documentType?: string
+  status?: string
+  limit?: number
 }
 
 // ─── IPC Channel Types ───────────────────────────────────────

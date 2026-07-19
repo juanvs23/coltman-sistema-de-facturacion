@@ -6,6 +6,7 @@ import { PluginLoader } from './plugins/PluginLoader'
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository'
 import { PrismaProductRepository } from './infrastructure/persistence/PrismaProductRepository'
 import { PrismaCustomerRepository } from './infrastructure/persistence/PrismaCustomerRepository'
+import { PrismaSaleRepository } from './infrastructure/persistence/PrismaSaleRepository'
 import { VenezuelaPlugin } from './country/ve/VenezuelaPlugin'
 import { registerIpcHandlers } from './ipc/handlers'
 
@@ -45,7 +46,8 @@ app.whenReady().then(async () => {
   const userRepository = new PrismaUserRepository(prisma)
   const productRepository = new PrismaProductRepository()
   const customerRepository = new PrismaCustomerRepository()
-  registerIpcHandlers({ pluginLoader, userRepository, productRepository, customerRepository })
+  const saleRepository = new PrismaSaleRepository()
+  registerIpcHandlers({ pluginLoader, userRepository, productRepository, customerRepository, saleRepository })
   await pluginLoader.loadPlugins()
   createWindow()
 

@@ -36,7 +36,7 @@ const electronAPI = {
   // Sales
   createSale: (sale: unknown) => ipcRenderer.invoke('sales:create', sale),
   listSales: (filters?: unknown) => ipcRenderer.invoke('sales:list', filters),
-  cancelSale: (id: string, userId: string) => ipcRenderer.invoke('sales:cancel', id, userId),
+  cancelSale: (id: string, userId: string, reason?: string) => ipcRenderer.invoke('sales:cancel', id, userId, reason),
   getNextReceiptNumber: () => ipcRenderer.invoke('sales:next-receipt-number'),
 
   // Cash Register

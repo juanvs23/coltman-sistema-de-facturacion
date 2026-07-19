@@ -44,8 +44,8 @@ interface ElectronAPI {
     userId: string
     customerId?: string
   }) => Promise<IpcResponse<Sale>>
-  listSales: (filters?: unknown) => Promise<IpcResponse<Sale[]>>
-  cancelSale: (id: string, userId: string) => Promise<IpcResponse<Sale>>
+  listSales: (filters?: import('@shared/types').SaleFilters) => Promise<IpcResponse<Sale[]>>
+  cancelSale: (id: string, userId: string, reason?: string) => Promise<IpcResponse<Sale>>
   getNextReceiptNumber: () => Promise<IpcResponse<number>>
 
   // Cash Register

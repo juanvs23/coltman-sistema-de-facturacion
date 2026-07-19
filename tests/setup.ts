@@ -22,8 +22,12 @@ window.electronAPI = {
     discount: 0, total: 116, paymentMethod: 'CASH', usdRate: 50, userId: '1',
     customerId: null, customer: null, items: [], notes: null, createdAt: new Date().toISOString()
   } }),
-  listSales: async () => ({ success: false, error: 'Mock: Not implemented' }),
-  cancelSale: async () => ({ success: false, error: 'Mock: Not implemented' }),
+  listSales: async () => ({ success: true, data: [] }),
+  cancelSale: async () => ({ success: true, data: {
+    id: 'mock', receiptNumber: 1, documentType: 'TICKET', status: 'CANCELLED', subtotal: 100, taxTotal: 16,
+    discount: 0, total: 116, paymentMethod: 'CASH', usdRate: 50, userId: '1',
+    customerId: null, customer: null, items: [], notes: null, createdAt: new Date().toISOString()
+  } }),
   getNextReceiptNumber: async () => ({ success: true, data: 42 }),
   openRegister: async () => ({ success: false, error: 'Mock: Not implemented' }),
   closeRegister: async () => ({ success: false, error: 'Mock: Not implemented' }),

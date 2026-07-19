@@ -97,7 +97,7 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.6.0)
+## Current State (v0.7.0)
 
 **Branch**: `dev`
 **Date**: 2026-07-19
@@ -161,9 +161,16 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - [x] **Notas y referencias**: campo de texto libre en PaymentModal, visible en recibo
 - [x] **calcCartTotals**: helper compartido eliminando duplicación CartSummary/PaymentModal
 - [x] **F5 (Descuento) y F9 (Nota)** habilitados en ShortcutBar
+
+### Completed (v0.7.0 — Fase 1.4)
+- [x] **PrismaSaleRepository**: repositorio hexagonal para ventas
+- [x] **Historial de ventas**: tabla con filtros (fecha, método de pago), búsqueda, detalle
+- [x] **Detalle de factura**: modal con productos, totales, cliente, notas, estado
+- [x] **Anulación de ventas**: con motivo obligatorio, control de usuario, restauración de stock
+- [x] **CancelSaleModal**: modal de anulación con motivo
 - [x] **62 tests**
 
-### Pending (Fase 1.4+)
+### Pending (Fase 1.5+)
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación

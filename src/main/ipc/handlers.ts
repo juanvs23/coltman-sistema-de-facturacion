@@ -5,6 +5,7 @@ import type { PluginLoader } from '../plugins/PluginLoader'
 import type { IUserRepository } from '../core/ports/IUserRepository'
 import type { IProductRepository } from '../core/ports/IProductRepository'
 import type { ICustomerRepository } from '../core/ports/ICustomerRepository'
+import type { ISaleRepository, SaleFilters } from '../core/ports/ISaleRepository'
 
 export function validateSaleInput(input: {
   documentType: string
@@ -24,6 +25,7 @@ export function registerIpcHandlers(deps: {
   userRepository?: IUserRepository
   productRepository?: IProductRepository
   customerRepository?: ICustomerRepository
+  saleRepository?: ISaleRepository
 }): void {
   // ─── Auth ────────────────────────────────────────────────
   ipcMain.handle('auth:login', async (_event, credentials: { username: string; password: string }) => {
@@ -382,12 +384,27 @@ export function registerIpcHandlers(deps: {
     }
   })
 
-  ipcMain.handle('sales:list', async (_event, filters) => {
-    return { success: false, error: 'Not implemented' }
+  const saleRepo = deps.saleRepository
+
+  ipcMain.handle('sales:list', async (_event, filters?: SaleFilters) => {
+    try {
+      if (!saleRepo) return { success: false, error: 'Repositorio de ventas no disponible' }
+      const sales = await saleRepo.findAll(filters)
+      return { success: true, data: sales }
+    } catch (error) {
+      return { success: false, error: 'Error al listar ventas' }
+    }
   })
 
-  ipcMain.handle('sales:cancel', async (_event, id, userId) => {
-    return { success: false, error: 'Not implemented' }
+  ipcMain.handle('sales:cancel', async (_event, id: string, userId: string, reason?: string) => {
+    try {
+      if (!saleRepo) return { success: false, error: 'Repositorio de ventas no disponible' }
+      const sale = await saleRepo.cancel(id, userId, reason)
+      return { success: true, data: sale }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al anular venta'
+      return { success: false, error: msg }
+    }
   })
 
   ipcMain.handle('sales:next-receipt-number', async () => {

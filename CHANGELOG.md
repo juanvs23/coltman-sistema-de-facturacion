@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.0] - 2026-07-19
+
+### Added
+- **Historial de ventas**: Tabla con filtros por fecha, método de pago; búsqueda y navegación
+- **PrismaSaleRepository**: Repositorio hexagonal para ventas (findAll con filtros, cancel con stock restore)
+- **Detalle de factura**: Modal completo con productos, totales, cliente, notas, estado y metadata
+- **Anulación de ventas**: CancelSaleModal con motivo obligatorio, control de usuario (solo el vendedor puede anular), restauración automática de stock
+- **SaleFiltersBar**: Filtros de fecha (desde/hasta), método de pago
+- **SaleTable + SaleRow**: Tabla con status badges, acciones Ver/Anular
+- Tipos `SaleFilters` y `CancelSaleRequest`
+
+### Changed
+- `ISaleRepository`: findAll ahora acepta objeto `SaleFilters`; cancel acepta `reason`
+- `sales:list` y `sales:cancel` implementados (ya no son stubs)
+- `Sale` type: agregados `cancelledAt`, `cancelledById`, `cancelledBy`, `notes`
+- `main.ts`: PrismaSaleRepository inyectado en handlers
+
 ## [0.6.0] - 2026-07-19
 
 ### Added
