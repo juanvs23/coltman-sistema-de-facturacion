@@ -198,7 +198,12 @@ Todos los módulos core del MVP están implementados. El sistema permite:
 - Configuración multi-país con plugin-ve y plugin-co
 - Empresa, usuarios, impuestos, tasa USD
 
-### Pending (Fase 2+)
+### Pending (Fase 2 — Cabos Sueltos)
+- [ ] **Pestaña Fiscal**: impresora fiscal, configuración SENIAT
+- [ ] **Pestaña Seguridad**: control de acceso, políticas de contraseña
+- [ ] **Build instaladores**: Windows (.exe), Linux (AppImage), Mac (.dmg)
+- [ ] **Multi-método de pago**: pago mixto real en una venta
+- [ ] **Documentación de usuario**: manual, guía de instalación, FAQ
 - [ ] **Rediseño UI del POS** — campo código/barras grande, N° visible, tasa fija, atajos
 - [ ] **Descuentos** por línea y total
 - [ ] **Historial de ventas** con filtros, detalle, reimpresión, anulación
