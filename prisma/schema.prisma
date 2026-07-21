@@ -9,10 +9,16 @@ datasource db {
 
 // ─── Users & Auth ────────────────────────────────────────────
 
-enum Role {
-  SELLER
-  ADMIN
-  SUPERADMIN
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  editable    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  permissions RolePermission[]
 }
 
 model User {
@@ -20,7 +26,8 @@ model User {
   username  String   @unique
   password  String   // bcrypt hash
   fullName  String
-  role      Role     @default(SELLER)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -29,6 +36,25 @@ model User {
   cancelledSales   Sale[]          @relation("CancelledSale")
   movements        CashMovement[]
   closedRegisters  CashRegister[]
+  rateChanges      UsdRate[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  handler     String   @unique
+  description String?
+  category    String   @default("general")
+
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
 }
 
 // ─── Customers (RIF / datos fiscales) ────────────────────────
@@ -138,9 +164,6 @@ model Sale {
   taxTotal        Float        // Suma de IVA
   discount        Float        @default(0)
   total           Float        // Monto final
-  paymentMethod   PaymentMethod
-  cashAmount      Float?       // Monto en efectivo (para vueltos)
-  changeAmount    Float?       // Vuelto
   usdRate         Float?       // Tasa del dólar al momento de la venta
   notes           String?
   userId          String
@@ -151,6 +174,7 @@ model Sale {
   cancelledBy     User?        @relation("CancelledSale", fields: [cancelledById], references: [id])
 
   items SaleItem[]
+  payments PaymentEntry[]
   customerId   String?
   customer     Customer?   @relation(fields: [customerId], references: [id])
 }
@@ -170,6 +194,17 @@ model SaleItem {
   product      Product @relation(fields: [productId], references: [id])
   saleId       String
   sale         Sale    @relation(fields: [saleId], references: [id])
+
+  @@index([saleId])
+}
+
+model PaymentEntry {
+  id        String  @id @default(uuid())
+  method    String  // CASH, TRANSFER, DEBIT_CARD, CREDIT_CARD, DIVISA
+  amountBs  Float   // Monto en bolívares
+  reference String? // Número de referencia (transferencia, último 4 dígitos)
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
   @@index([saleId])
 }
@@ -239,15 +274,29 @@ model FiscalConfig {
 }
 
 model AppConfig {
-  id              String  @id @default("default")
-  country         String  @default("VE") // Código ISO del país
-  currencySymbol  String  @default("Bs.")
-  usdRate         Float   @default(0) // Tasa BCV actual
-  usdRateSource   String  @default("bcv") // bcv, enparalelo, criptodolar
-  usdAutoUpdate   Boolean @default(false)
-  receiptFooter   String?
-  taxRateDefault  Float   @default(16.0)
-  lowStockThreshold Int   @default(10)
-  darkMode        Boolean @default(false)
-  updatedAt       DateTime @updatedAt
+  id                String  @id @default("default")
+  country           String  @default("VE")
+  currencySymbol    String  @default("Bs.")
+  usdRate           Float   @default(0)
+  usdRateSource     String  @default("bcv")
+  usdRateId         String?
+  usdAutoUpdate     Boolean @default(false)
+  receiptFooter     String?
+  taxRateDefault    Float   @default(16.0)
+  lowStockThreshold Int     @default(10)
+  darkMode          Boolean @default(false)
+  inactivityTimeout Int     @default(600)
+  updatedAt         DateTime @updatedAt
+}
+
+// ─── USD Rate History ───────────────────────────────────────
+
+model UsdRate {
+  id          String   @id @default(uuid())
+  rate        Float
+  source      String   @default("manual")
+  notes       String?
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
 }

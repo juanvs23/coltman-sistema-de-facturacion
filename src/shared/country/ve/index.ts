@@ -15,11 +15,10 @@ export const COUNTRY_CODE = 'VE'
 /** Métodos de pago disponibles en Venezuela */
 export const PAYMENT_METHODS = [
   { id: 'CASH', label: 'Efectivo' },
-  { id: 'TRANSFER', label: 'Transferencia / Pago Móvil' },
-  { id: 'DEBIT_CARD', label: 'Tarjeta de Débito' },
-  { id: 'CREDIT_CARD', label: 'Tarjeta de Crédito' },
-  { id: 'DIVISA', label: 'Divisa (USD)' },
-  { id: 'MIXED', label: 'Mixto' }
+  { id: 'TRANSFER', label: 'Transferencia / Pago Movil' },
+  { id: 'DEBIT_CARD', label: 'Tarjeta de Debito' },
+  { id: 'CREDIT_CARD', label: 'Tarjeta de Credito' },
+  { id: 'DIVISA', label: 'Divisa (USD)' }
 ]
 
 /** Pie de recibo según tipo de documento */

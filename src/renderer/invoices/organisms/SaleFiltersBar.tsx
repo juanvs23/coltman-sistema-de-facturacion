@@ -47,7 +47,7 @@ export default function SaleFiltersBar({ filters, onChange }: SaleFiltersBarProp
           <option value="DEBIT_CARD">Débito</option>
           <option value="CREDIT_CARD">Crédito</option>
           <option value="DIVISA">Divisa</option>
-          <option value="MIXED">Mixto</option>
+          <option value="MIXED">—</option>
         </select>
       </div>
       <button onClick={apply}

@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { User } from '@shared/types'
 
+interface RoleOption {
+  id: string
+  name: string
+}
+
 interface UserFormModalProps {
-  user: User | null        // null = crear, no-null = editar
+  user: User | null
+  roles: RoleOption[]
   onClose: () => void
   onSave: (data: UserFormData) => Promise<void>
 }
@@ -11,21 +17,25 @@ export interface UserFormData {
   username: string
   fullName: string
   password: string
-  role: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+  roleId: string
 }
 
-const ROLES: { value: User['role']; label: string }[] = [
-  { value: 'SELLER', label: 'Vendedor' },
-  { value: 'ADMIN', label: 'Administrador' },
-  { value: 'SUPERADMIN', label: 'Superadministrador' }
-]
+const ROLE_DISPLAY: Record<string, string> = {
+  superadmin: 'Superadmin',
+  admin: 'Administrador',
+  seller: 'Vendedor'
+}
 
-export default function UserFormModal({ user, onClose, onSave }: UserFormModalProps): JSX.Element {
+function displayRole(name: string): string {
+  return ROLE_DISPLAY[name] ?? name
+}
+
+export default function UserFormModal({ user, roles, onClose, onSave }: UserFormModalProps): JSX.Element {
   const isEditing = user !== null
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<User['role']>('SELLER')
+  const [roleId, setRoleId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -33,9 +43,11 @@ export default function UserFormModal({ user, onClose, onSave }: UserFormModalPr
     if (user) {
       setUsername(user.username)
       setFullName(user.fullName)
-      setRole(user.role)
+      setRoleId(user.roleId ?? '')
+    } else if (roles.length > 0) {
+      setRoleId(roles[0].id)
     }
-  }, [user])
+  }, [user, roles])
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -57,10 +69,14 @@ export default function UserFormModal({ user, onClose, onSave }: UserFormModalPr
       setError('La contraseña debe tener al menos 6 caracteres')
       return
     }
+    if (!roleId) {
+      setError('Debe seleccionar un rol')
+      return
+    }
 
     setSaving(true)
     try {
-      await onSave({ username: username.trim(), fullName: fullName.trim(), password, role })
+      await onSave({ username: username.trim(), fullName: fullName.trim(), password, roleId })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
     } finally {
@@ -136,13 +152,14 @@ export default function UserFormModal({ user, onClose, onSave }: UserFormModalPr
             </label>
             <select
               id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as User['role'])}
+              value={roleId}
+              onChange={(e) => setRoleId(e.target.value)}
               className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink
                 focus:border-primary focus:outline-none"
             >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
+              <option value="" disabled>Seleccionar rol</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{displayRole(r.name)}</option>
               ))}
             </select>
           </div>

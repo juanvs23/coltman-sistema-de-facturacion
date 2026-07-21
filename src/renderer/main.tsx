@@ -19,16 +19,31 @@ if (!window.electronAPI) {
 
   window.electronAPI = {
     login: async (credentials) => {
-      // Mock para desarrollo: acepta admin/admin123
-      await new Promise((r) => setTimeout(r, 500))
+      await new Promise((r) => setTimeout(r, 300))
       if (credentials.username === 'admin' && credentials.password === 'admin123') {
         return {
           success: true,
           data: {
-            userId: 'mock-id',
+            userId: 'mock-admin',
             username: 'admin',
             fullName: 'Administrador Principal',
-            role: 'SUPERADMIN',
+            role: 'superadmin',
+            roleId: 'role-superadmin',
+            sessionToken: 'mock-token-admin',
+            loggedAt: new Date().toISOString()
+          }
+        }
+      }
+      if (credentials.username === 'vendedor1' && credentials.password === 'admin123') {
+        return {
+          success: true,
+          data: {
+            userId: 'mock-seller',
+            username: 'vendedor1',
+            fullName: 'Vendedor Uno',
+            role: 'seller',
+            roleId: 'role-seller',
+            sessionToken: 'mock-token-seller',
             loggedAt: new Date().toISOString()
           }
         }
@@ -37,6 +52,13 @@ if (!window.electronAPI) {
     },
     logout: async () => ({ success: true }),
     getSession: async () => ({ success: false, data: null }),
+    unlock: async (password) => {
+      await new Promise((r) => setTimeout(r, 200))
+      if (password === 'admin123') {
+        return { success: true, data: { userId: 'mock-admin', username: 'admin', fullName: 'Administrador Principal', role: 'superadmin', roleId: 'role-superadmin', sessionToken: 'mock-token', loggedAt: new Date().toISOString() } }
+      }
+      return { success: false, error: 'Contrasena incorrecta' }
+    },
     listProducts: async () => ({
       success: true,
       data: [
@@ -101,7 +123,7 @@ if (!window.electronAPI) {
         taxTotal: 16,
         discount: 0,
         total: 116,
-        paymentMethod: input.paymentMethod ?? 'CASH',
+        payments: input.payments ?? [{ method: 'CASH', amountBs: 116 }],
         usdRate: input.usdRate ?? 48.5,
         notes: input.notes ?? null,
         userId: input.userId ?? 'mock-id',
@@ -117,7 +139,7 @@ if (!window.electronAPI) {
         {
           id: 's1', receiptNumber: 1001, documentType: 'FACTURA', status: 'COMPLETED',
           subtotal: 80, taxTotal: 12.8, discount: 0, total: 92.8,
-          paymentMethod: 'CASH', usdRate: 48.5, notes: null,
+          payments: [{ id: 'p1', method: 'CASH', amountBs: 92.8 }], usdRate: 48.5, notes: null,
           userId: '1', user: { id: '1', fullName: 'Administrador Principal' },
           customerId: '1', customer: { id: '1', taxId: 'J-12345678-4', name: 'Mi Negocio C.A.' },
           items: [{ id: 'i1', quantity: 2, price: 46.4, priceUsd: 0.25, discount: 0, subtotal: 92.8, taxRate: 16, taxAmount: 12.8, total: 105.6, productId: '1', product: { id: '1', name: 'Producto de prueba' } }],
@@ -126,7 +148,7 @@ if (!window.electronAPI) {
         {
           id: 's2', receiptNumber: 1002, documentType: 'TICKET', status: 'COMPLETED',
           subtotal: 50, taxTotal: 8, discount: 5, total: 53,
-          paymentMethod: 'TRANSFER', usdRate: 48.5, notes: 'Pago móvil',
+          payments: [{ id: 'p2', method: 'TRANSFER', amountBs: 53, reference: 'Pago movil' }], usdRate: 48.5, notes: 'Pago movil',
           userId: '2', user: { id: '2', fullName: 'Vendedor Uno' },
           customerId: null, customer: null,
           items: [{ id: 'i2', quantity: 5, price: 10.6, priceUsd: 0.25, discount: 0, subtotal: 53, taxRate: 16, taxAmount: 8, total: 61, productId: '1', product: { id: '1', name: 'Producto de prueba' } }],
@@ -135,7 +157,7 @@ if (!window.electronAPI) {
         {
           id: 's3', receiptNumber: 1003, documentType: 'FACTURA', status: 'CANCELLED',
           subtotal: 200, taxTotal: 32, discount: 10, total: 222,
-          paymentMethod: 'DIVISA', usdRate: 49, notes: 'Anulación: Error en monto',
+          payments: [{ id: 'p3', method: 'DIVISA', amountBs: 222 }], usdRate: 49, notes: 'Anulacion: Error en monto',
           userId: '1', user: { id: '1', fullName: 'Administrador Principal' },
           customerId: '1', customer: { id: '1', taxId: 'J-12345678-4', name: 'Mi Negocio C.A.' },
           items: [],
@@ -159,9 +181,9 @@ if (!window.electronAPI) {
           ]
         },
         sales: [
-          { paymentMethod: 'CASH', total: 92.8 },
-          { paymentMethod: 'TRANSFER', total: 53 },
-          { paymentMethod: 'CASH', total: 120 }
+          { payments: [{ method: 'CASH', amountBs: 92.8 }] },
+          { payments: [{ method: 'TRANSFER', amountBs: 53 }] },
+          { payments: [{ method: 'CASH', amountBs: 120 }] }
         ]
       }
     }),
@@ -202,30 +224,71 @@ if (!window.electronAPI) {
     }),
     updateCompanyConfig: async () => ({ success: true, data: { businessName: 'Mi Negocio C.A.' } }),
     getUsdRate: async () => ({ success: true, data: { rate: 48.50, source: 'bcv' } }),
-    getConfig: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    updateConfig: async () => ({ success: false, error: 'No implementado en modo browser' }),
+    getConfig: async () => ({ success: true, data: { country: 'VE', currencySymbol: 'Bs.', usdRate: 48.50, usdRateSource: 'bcv', usdAutoUpdate: false, taxRateDefault: 16, lowStockThreshold: 10, darkMode: false, inactivityTimeout: 600 } }),
+    updateConfig: async (data) => ({ success: true, data }),
     testPrinter: async () => ({ success: false, error: 'No implementado en modo browser' }),
     printReceipt: async () => ({ success: false, error: 'No implementado en modo browser' }),
+    getFiscalConfig: async () => ({ success: true, data: { printerType: 'bixolon', printerPort: 'COM1', printerEnabled: false, seniatEnabled: false, autoSendSeniat: false } }),
+    updateFiscalConfig: async (data) => ({ success: true, data }),
     // Users
     listUsers: async () => ({
       success: true,
       data: [
-        { id: '1', username: 'admin', fullName: 'Administrador Principal', role: 'SUPERADMIN' as const, active: true },
-        { id: '2', username: 'vendedor1', fullName: 'Vendedor Uno', role: 'SELLER' as const, active: true },
-        { id: '3', username: 'vendedor2', fullName: 'Vendedor Dos', role: 'SELLER' as const, active: false }
+        { id: '1', username: 'admin', fullName: 'Administrador Principal', role: 'superadmin', roleId: 'role-superadmin', active: true },
+        { id: '2', username: 'vendedor1', fullName: 'Vendedor Uno', role: 'seller', roleId: 'role-seller', active: true },
+        { id: '3', username: 'vendedor2', fullName: 'Vendedor Dos', role: 'seller', roleId: 'role-seller', active: false }
       ]
     }),
     createUser: async (input) => ({
       success: true,
-      data: { id: crypto.randomUUID(), ...input, active: true }
+      data: { id: crypto.randomUUID(), ...input, role: 'seller', active: true }
     }),
     updateUser: async (_id, input) => ({
       success: true,
-      data: { id: '1', username: 'admin', fullName: input.fullName ?? 'Administrador Principal', role: input.role ?? 'SUPERADMIN' as const, active: true }
+      data: { id: '1', username: 'admin', fullName: input.fullName ?? 'Administrador Principal', role: 'superadmin', roleId: 'role-superadmin', active: true }
     }),
     toggleUserActive: async (id) => ({
       success: true,
-      data: { id, username: 'mock', fullName: 'Mock User', role: 'SELLER' as const, active: true }
+      data: { id, username: 'mock', fullName: 'Mock User', role: 'seller', roleId: 'role-seller', active: true }
+    }),
+    // Roles & Permissions
+    listRoles: async () => ({
+      success: true,
+      data: [
+        { id: 'role-superadmin', name: 'superadmin', description: 'Acceso total al sistema', editable: false, permissions: ['inventory.view', 'inventory.write', 'taxes.view', 'taxes.write', 'customers.view', 'customers.write', 'sales.view', 'sales.write', 'cash.view', 'cash.write', 'reports.view', 'config.view', 'config.write', 'printer.view', 'admin.view', 'admin.write'], userCount: 1, createdAt: new Date().toISOString() },
+        { id: 'role-admin', name: 'admin', description: 'Gestion y configuracion', editable: false, permissions: ['inventory.view', 'inventory.write', 'taxes.view', 'taxes.write', 'customers.view', 'customers.write', 'sales.view', 'sales.write', 'cash.view', 'cash.write', 'reports.view', 'config.view', 'printer.view'], userCount: 0, createdAt: new Date().toISOString() },
+        { id: 'role-seller', name: 'seller', description: 'Punto de venta', editable: false, permissions: ['inventory.view', 'customers.view', 'customers.write', 'sales.view', 'sales.write', 'cash.view', 'reports.view'], userCount: 2, createdAt: new Date().toISOString() }
+      ]
+    }),
+    createRole: async (input) => ({
+      success: true,
+      data: { id: crypto.randomUUID(), name: input.name, description: input.description, editable: true, permissions: input.permissions }
+    }),
+    updateRole: async (_id, input) => ({
+      success: true,
+      data: { id: _id, name: input.name ?? 'role', description: input.description, editable: true, permissions: input.permissions ?? [] }
+    }),
+    deleteRole: async () => ({ success: true }),
+    listPermissions: async () => ({
+      success: true,
+      data: [
+        { id: 'p1', handler: 'inventory.view', description: 'Ver inventario', category: 'inventory' },
+        { id: 'p2', handler: 'inventory.write', description: 'Crear/editar productos', category: 'inventory' },
+        { id: 'p3', handler: 'taxes.view', description: 'Ver impuestos', category: 'taxes' },
+        { id: 'p4', handler: 'taxes.write', description: 'Crear/editar impuestos', category: 'taxes' },
+        { id: 'p5', handler: 'customers.view', description: 'Ver clientes', category: 'customers' },
+        { id: 'p6', handler: 'customers.write', description: 'Crear/editar clientes', category: 'customers' },
+        { id: 'p7', handler: 'sales.view', description: 'Ver ventas', category: 'sales' },
+        { id: 'p8', handler: 'sales.write', description: 'Crear/anular ventas', category: 'sales' },
+        { id: 'p9', handler: 'cash.view', description: 'Ver caja', category: 'cash' },
+        { id: 'p10', handler: 'cash.write', description: 'Gestionar caja', category: 'cash' },
+        { id: 'p11', handler: 'reports.view', description: 'Ver reportes', category: 'reports' },
+        { id: 'p12', handler: 'config.view', description: 'Ver configuracion', category: 'config' },
+        { id: 'p13', handler: 'config.write', description: 'Editar configuracion', category: 'config' },
+        { id: 'p14', handler: 'printer.view', description: 'Imprimir', category: 'printer' },
+        { id: 'p15', handler: 'admin.view', description: 'Ver administracion', category: 'admin' },
+        { id: 'p16', handler: 'admin.write', description: 'Gestionar usuarios/roles', category: 'admin' }
+      ]
     }),
     // Customers
     listCustomers: async () => ({

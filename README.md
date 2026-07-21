@@ -106,15 +106,15 @@ dev  →  (trabajo diario)  →  merge →  master  (producción)
 
 ## Estado del Proyecto
 
-**v0.1.1** — En desarrollo activo. Próximas prioridades:
+**v0.9.0** — Fase 1 completada. Fase 2 en progreso:
 
-1. 🔲 Router de navegación (menú lateral)
-2. 🔲 CRUD de productos
-3. 🔲 Pantalla POS (carrito + cobro)
-4. 🔲 Arqueo de caja
-5. 🔲 Historial de ventas
+1. 🔲 Pestaña Fiscal y Seguridad
+2. 🔲 Build instaladores (Windows, Linux, Mac)
+3. 🔲 Multi-método de pago
+4. 🔲 Documentación de usuario
+5. 🔲 Tests de integración
 
-Ver el [roadmap](docs/roadmap.md) (interno) y el [CHANGELOG](CHANGELOG.md).
+Ver el [roadmap](docs/roadmap.md) y el [CHANGELOG](CHANGELOG.md).
 
 ## Plugins
 

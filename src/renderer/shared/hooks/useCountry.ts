@@ -21,8 +21,8 @@ const NEUTRAL: CountryData = {
   paymentMethods: [
     { id: 'CASH', label: 'Efectivo' },
     { id: 'TRANSFER', label: 'Transferencia' },
-    { id: 'DEBIT_CARD', label: 'Tarjeta de Débito' },
-    { id: 'CREDIT_CARD', label: 'Tarjeta de Crédito' }
+    { id: 'DEBIT_CARD', label: 'Tarjeta de Debito' },
+    { id: 'CREDIT_CARD', label: 'Tarjeta de Credito' }
   ],
   getReceiptFooter: () => ['Gracias por su compra'],
   validateTaxId: () => ({ valid: true }),

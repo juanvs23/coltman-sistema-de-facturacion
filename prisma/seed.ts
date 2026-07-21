@@ -1,4 +1,4 @@
-import { PrismaClient, Role, ProductType } from '@prisma/client'
+import { PrismaClient, ProductType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -7,6 +7,94 @@ const USD_RATE = 48.50
 function calcBs(usd: number, rate: number = USD_RATE): number {
   return Math.round(usd * rate * 100) / 100
 }
+
+const PERMISSION_DEFS: { handler: string; description: string; category: string }[] = [
+  { handler: 'products:list', description: 'Listar productos', category: 'inventory' },
+  { handler: 'products:search', description: 'Buscar productos', category: 'inventory' },
+  { handler: 'products:create', description: 'Crear productos', category: 'inventory' },
+  { handler: 'products:update', description: 'Editar productos', category: 'inventory' },
+  { handler: 'products:delete', description: 'Eliminar productos', category: 'inventory' },
+  { handler: 'categories:list', description: 'Listar categorias', category: 'inventory' },
+  { handler: 'categories:create', description: 'Crear categorias', category: 'inventory' },
+  { handler: 'categories:update', description: 'Editar categorias', category: 'inventory' },
+  { handler: 'categories:delete', description: 'Eliminar categorias', category: 'inventory' },
+  { handler: 'taxes:list', description: 'Listar impuestos', category: 'taxes' },
+  { handler: 'taxes:create', description: 'Crear impuestos', category: 'taxes' },
+  { handler: 'taxes:update', description: 'Editar impuestos', category: 'taxes' },
+  { handler: 'customers:list', description: 'Listar clientes', category: 'customers' },
+  { handler: 'customers:search', description: 'Buscar clientes', category: 'customers' },
+  { handler: 'customers:find-by-tax-id', description: 'Buscar por RIF', category: 'customers' },
+  { handler: 'customers:create', description: 'Crear clientes', category: 'customers' },
+  { handler: 'customers:update', description: 'Editar clientes', category: 'customers' },
+  { handler: 'customers:delete', description: 'Eliminar clientes', category: 'customers' },
+  { handler: 'sales:create', description: 'Crear ventas', category: 'sales' },
+  { handler: 'sales:list', description: 'Listar ventas', category: 'sales' },
+  { handler: 'sales:cancel', description: 'Anular ventas', category: 'sales' },
+  { handler: 'sales:next-receipt-number', description: 'Ver correlativo', category: 'sales' },
+  { handler: 'cash:open', description: 'Abrir caja', category: 'cash' },
+  { handler: 'cash:close', description: 'Cerrar caja', category: 'cash' },
+  { handler: 'cash:summary', description: 'Ver resumen de caja', category: 'cash' },
+  { handler: 'cash:add-movement', description: 'Registrar movimiento de caja', category: 'cash' },
+  { handler: 'reports:daily', description: 'Reporte diario', category: 'reports' },
+  { handler: 'reports:by-product', description: 'Reporte por producto', category: 'reports' },
+  { handler: 'reports:by-user', description: 'Reporte por usuario', category: 'reports' },
+  { handler: 'reports:iva', description: 'Libro IVA', category: 'reports' },
+  { handler: 'config:get', description: 'Ver configuracion', category: 'config' },
+  { handler: 'config:update', description: 'Editar configuracion', category: 'config' },
+  { handler: 'company:get', description: 'Ver datos de empresa', category: 'config' },
+  { handler: 'company:update', description: 'Editar datos de empresa', category: 'config' },
+  { handler: 'usd:rate', description: 'Ver tasa USD', category: 'config' },
+  { handler: 'usd:history', description: 'Historial de tasas USD', category: 'config' },
+  { handler: 'printer:test', description: 'Probar impresora', category: 'printer' },
+  { handler: 'printer:print-receipt', description: 'Imprimir recibo', category: 'printer' },
+  { handler: 'fiscal:get', description: 'Ver configuracion fiscal', category: 'config' },
+  { handler: 'fiscal:update', description: 'Editar configuracion fiscal', category: 'config' },
+  { handler: 'users:list', description: 'Listar usuarios', category: 'admin' },
+  { handler: 'users:create', description: 'Crear usuarios', category: 'admin' },
+  { handler: 'users:update', description: 'Editar usuarios', category: 'admin' },
+  { handler: 'users:toggle-active', description: 'Activar/desactivar usuarios', category: 'admin' },
+  { handler: 'plugins:list', description: 'Listar plugins', category: 'admin' },
+  { handler: 'plugins:install', description: 'Instalar plugins', category: 'admin' },
+  { handler: 'plugins:toggle-active', description: 'Activar/desactivar plugins', category: 'admin' },
+  { handler: 'roles:list', description: 'Listar roles', category: 'admin' },
+  { handler: 'roles:create', description: 'Crear roles', category: 'admin' },
+  { handler: 'roles:update', description: 'Editar roles', category: 'admin' },
+  { handler: 'roles:delete', description: 'Eliminar roles', category: 'admin' },
+]
+
+const SELLER_PERMISSIONS = [
+  'products:list', 'products:search',
+  'categories:list',
+  'taxes:list',
+  'customers:list', 'customers:search', 'customers:find-by-tax-id',
+  'sales:create', 'sales:list', 'sales:cancel', 'sales:next-receipt-number',
+  'cash:summary',
+  'reports:daily', 'reports:by-product', 'reports:by-user', 'reports:iva',
+  'config:get',
+  'company:get',
+  'usd:rate',
+  'usd:history',
+]
+
+const ADMIN_PERMISSIONS = [
+  ...SELLER_PERMISSIONS,
+  'products:create', 'products:update', 'products:delete',
+  'categories:create', 'categories:update', 'categories:delete',
+  'taxes:create', 'taxes:update',
+  'customers:create', 'customers:update', 'customers:delete',
+  'cash:open', 'cash:close', 'cash:add-movement',
+  'config:update',
+  'company:update',
+  'printer:test', 'printer:print-receipt',
+  'fiscal:get', 'fiscal:update',
+]
+
+const SUPERADMIN_PERMISSIONS = [
+  ...ADMIN_PERMISSIONS,
+  'users:list', 'users:create', 'users:update', 'users:toggle-active',
+  'plugins:list', 'plugins:install', 'plugins:toggle-active',
+  'roles:list', 'roles:create', 'roles:update', 'roles:delete',
+]
 
 async function main(): Promise<void> {
   console.log('🌱 Seeding database...')
@@ -21,8 +109,56 @@ async function main(): Promise<void> {
   await prisma.product.deleteMany()
   await prisma.category.deleteMany()
   await prisma.user.deleteMany()
+  await prisma.rolePermission.deleteMany()
+  await prisma.permission.deleteMany()
+  await prisma.role.deleteMany()
+  await prisma.companyConfig.deleteMany()
   await prisma.fiscalConfig.deleteMany()
   await prisma.appConfig.deleteMany()
+
+  // ── Permissions ─────────────────────────────────────────────
+  console.log('  Creating permissions...')
+  for (const perm of PERMISSION_DEFS) {
+    await prisma.permission.upsert({
+      where: { handler: perm.handler },
+      create: perm,
+      update: { description: perm.description, category: perm.category }
+    })
+  }
+
+  // ── Roles ───────────────────────────────────────────────────
+  console.log('  Creating roles...')
+  const superadminRole = await prisma.role.create({
+    data: { name: 'superadmin', description: 'Acceso total al sistema', editable: false }
+  })
+  const adminRole = await prisma.role.create({
+    data: { name: 'admin', description: 'Administracion de productos, impuestos y configuracion', editable: false }
+  })
+  const sellerRole = await prisma.role.create({
+    data: { name: 'seller', description: 'Punto de venta y consultas', editable: false }
+  })
+
+  // ── Role Permissions ────────────────────────────────────────
+  console.log('  Assigning permissions...')
+  const permMap = new Map<string, string>()
+  for (const p of await prisma.permission.findMany()) {
+    permMap.set(p.handler, p.id)
+  }
+
+  for (const handler of SELLER_PERMISSIONS) {
+    const pid = permMap.get(handler)
+    if (pid) await prisma.rolePermission.create({ data: { roleId: sellerRole.id, permissionId: pid } })
+  }
+  for (const handler of ADMIN_PERMISSIONS) {
+    const pid = permMap.get(handler)
+    if (pid) await prisma.rolePermission.create({ data: { roleId: adminRole.id, permissionId: pid } })
+  }
+  for (const handler of SUPERADMIN_PERMISSIONS) {
+    const pid = permMap.get(handler)
+    if (pid) await prisma.rolePermission.create({ data: { roleId: superadminRole.id, permissionId: pid } })
+  }
+
+  console.log(`  ✅ ${SELLER_PERMISSIONS.length} seller / ${ADMIN_PERMISSIONS.length} admin / ${SUPERADMIN_PERMISSIONS.length} superadmin`)
 
   // ── Users ────────────────────────────────────────────────────
   const passwordHash = await bcrypt.hash('admin123', 10)
@@ -32,7 +168,7 @@ async function main(): Promise<void> {
       username: 'admin',
       password: passwordHash,
       fullName: 'Administrador Principal',
-      role: Role.SUPERADMIN
+      roleId: superadminRole.id
     }
   })
 
@@ -41,7 +177,7 @@ async function main(): Promise<void> {
       username: 'vendedor1',
       password: passwordHash,
       fullName: 'María González',
-      role: Role.SELLER
+      roleId: sellerRole.id
     }
   })
 
@@ -50,7 +186,7 @@ async function main(): Promise<void> {
       username: 'vendedor2',
       password: passwordHash,
       fullName: 'Carlos Pérez',
-      role: Role.SELLER
+      roleId: sellerRole.id
     }
   })
 
@@ -225,8 +361,16 @@ async function main(): Promise<void> {
   console.log('  ✅ AppConfig created')
 
   // ── Company Config (default) ──────────────────────────────────
-  await prisma.companyConfig.create({
-    data: {
+  await prisma.companyConfig.upsert({
+    where: { id: 'default' },
+    update: {
+      businessName: 'Mi Negocio C.A.',
+      taxId: 'J-12345678-9',
+      address: 'Av. Principal, Local 1, Caracas',
+      phone: '+58 212 1234567',
+      email: 'contacto@minegocio.com',
+    },
+    create: {
       businessName: 'Mi Negocio C.A.',
       taxId: 'J-12345678-9',
       address: 'Av. Principal, Local 1, Caracas',

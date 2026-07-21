@@ -5,13 +5,21 @@ import UsersTab from './UsersTab'
 import type { User } from '@shared/types'
 
 const MOCK_USERS: User[] = [
-  { id: '1', username: 'admin', fullName: 'Admin Principal', role: 'SUPERADMIN', active: true },
-  { id: '2', username: 'vendedor1', fullName: 'Vendedor Uno', role: 'SELLER', active: true },
-  { id: '3', username: 'vendedor2', fullName: 'Vendedor Dos', role: 'SELLER', active: false }
+  { id: '1', username: 'admin', fullName: 'Admin Principal', role: 'superadmin', roleId: 'role-superadmin', active: true },
+  { id: '2', username: 'vendedor1', fullName: 'Vendedor Uno', role: 'seller', roleId: 'role-seller', active: true },
+  { id: '3', username: 'vendedor2', fullName: 'Vendedor Dos', role: 'seller', roleId: 'role-seller', active: false }
 ]
 
 beforeEach(() => {
   window.electronAPI.listUsers = vi.fn().mockResolvedValue({ success: true, data: MOCK_USERS })
+  window.electronAPI.listRoles = vi.fn().mockResolvedValue({
+    success: true,
+    data: [
+      { id: 'role-superadmin', name: 'superadmin', description: 'Acceso total', editable: false, permissions: [], userCount: 1, createdAt: new Date().toISOString() },
+      { id: 'role-admin', name: 'admin', description: 'Admin', editable: false, permissions: [], userCount: 0, createdAt: new Date().toISOString() },
+      { id: 'role-seller', name: 'seller', description: 'Vendedor', editable: false, permissions: [], userCount: 2, createdAt: new Date().toISOString() }
+    ]
+  })
   window.electronAPI.createUser = vi.fn().mockResolvedValue({ success: true, data: MOCK_USERS[0] })
   window.electronAPI.updateUser = vi.fn().mockResolvedValue({ success: true, data: MOCK_USERS[0] })
   window.electronAPI.toggleUserActive = vi.fn().mockResolvedValue({ success: true, data: { ...MOCK_USERS[1], active: false } })
@@ -87,7 +95,7 @@ describe('UsersTab', () => {
         username: 'nuevo',
         fullName: 'Nuevo Usuario',
         password: 'password123',
-        role: 'SELLER'
+        roleId: 'role-superadmin'
       })
     })
   })

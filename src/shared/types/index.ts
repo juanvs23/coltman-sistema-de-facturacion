@@ -4,7 +4,8 @@ export interface User {
   id: string
   username: string
   fullName: string
-  role: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+  role: string
+  roleId: string
   active: boolean
 }
 
@@ -12,7 +13,9 @@ export interface AuthSession {
   userId: string
   username: string
   fullName: string
-  role: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+  role: string
+  roleId: string
+  sessionToken: string
   loggedAt: string
 }
 
@@ -84,6 +87,19 @@ export interface SaleItem {
 
 export type DocumentType = 'FACTURA' | 'TICKET'
 
+export interface PaymentEntry {
+  id: string
+  method: string
+  amountBs: number
+  reference?: string
+}
+
+export interface PaymentInput {
+  method: string
+  amountBs: number
+  reference?: string
+}
+
 export interface Sale {
   id: string
   receiptNumber: number
@@ -93,7 +109,7 @@ export interface Sale {
   taxTotal: number
   discount: number
   total: number
-  paymentMethod: 'CASH' | 'TRANSFER' | 'DEBIT_CARD' | 'CREDIT_CARD' | 'DIVISA' | 'MIXED'
+  payments: PaymentEntry[]
   usdRate?: number
   notes?: string
   userId: string
@@ -140,8 +156,7 @@ export interface CreateSaleRequest {
     discount?: number
   }>
   documentType: DocumentType
-  paymentMethod: Sale['paymentMethod']
-  cashAmount?: number
+  payments: PaymentInput[]
   discount?: number
   usdRate?: number
   notes?: string

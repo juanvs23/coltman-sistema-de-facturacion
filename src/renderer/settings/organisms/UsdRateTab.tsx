@@ -3,10 +3,21 @@ import { useState, useEffect, useCallback } from 'react'
 interface UsdRateData {
   rate: number
   source: string
+  rateId: string | null
+}
+
+interface RateHistoryEntry {
+  id: string
+  rate: number
+  source: string
+  notes: string | null
+  createdBy: string | null
+  createdAt: string
 }
 
 export default function UsdRateTab(): JSX.Element {
   const [rate, setRate] = useState<UsdRateData | null>(null)
+  const [history, setHistory] = useState<RateHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -29,7 +40,16 @@ export default function UsdRateTab(): JSX.Element {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  const loadHistory = useCallback(async () => {
+    try {
+      const res = await window.electronAPI.getUsdRateHistory()
+      if (res.success && res.data) {
+        setHistory(res.data)
+      }
+    } catch { /* silencioso */ }
+  }, [])
+
+  useEffect(() => { load(); loadHistory() }, [load, loadHistory])
 
   const handleSave = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -44,6 +64,7 @@ export default function UsdRateTab(): JSX.Element {
       const res = await window.electronAPI.updateConfig({ usdRate: rateNum, usdRateSource: editSource })
       if (res.success) {
         await load()
+        await loadHistory()
       } else {
         setError(res.error ?? 'Error al guardar')
       }
@@ -51,8 +72,19 @@ export default function UsdRateTab(): JSX.Element {
     finally { setSaving(false) }
   }
 
+  const formatDate = (iso: string): string => {
+    const d = new Date(iso)
+    return d.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const sourceLabel = (src: string): string => {
+    const map: Record<string, string> = { bcv: 'BCV', enparalelo: 'EnParaleloVzla', criptodolar: 'CriptoDólar', manual: 'Manual' }
+    return map[src] ?? src
+  }
+
   return (
-    <div className="flex flex-col gap-4 max-w-xl">
+    <div className="flex flex-col gap-6 max-w-2xl">
       <h3 className="text-title-sm text-ink">Tasa de cambio USD</h3>
 
       {error && (
@@ -75,7 +107,7 @@ export default function UsdRateTab(): JSX.Element {
               <div>
                 <p className="text-caption text-muted">Fuente</p>
                 <span className="inline-block rounded-full bg-surface-soft px-3 py-1 text-caption text-muted">
-                  {rate.source === 'bcv' ? 'BCV' : rate.source === 'enparalelo' ? 'EnParaleloVzla' : rate.source === 'criptodolar' ? 'CriptoDólar' : 'Manual'}
+                  {sourceLabel(rate.source)}
                 </span>
               </div>
             </div>
@@ -111,6 +143,41 @@ export default function UsdRateTab(): JSX.Element {
           </form>
         </>
       )}
+
+      {/* Rate history */}
+      <div>
+        <h4 className="text-title-sm text-ink mb-3">Historial de cambios</h4>
+        {history.length === 0 ? (
+          <p className="text-body-sm text-muted-soft py-4">Sin registros aún</p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-hairline bg-canvas">
+            <table className="w-full text-body-sm">
+              <thead>
+                <tr className="border-b border-hairline bg-surface-soft/50">
+                  <th className="px-4 py-2.5 text-left font-medium text-ink">Fecha</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-ink">Tasa</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-ink">Fuente</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-ink">Registrado por</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {history.map((entry) => (
+                  <tr key={entry.id}>
+                    <td className="px-4 py-2.5 text-muted">{formatDate(entry.createdAt)}</td>
+                    <td className="px-4 py-2.5 text-ink font-medium">Bs. {entry.rate.toFixed(2)}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="rounded-full bg-surface-soft px-2 py-0.5 text-caption text-muted">
+                        {sourceLabel(entry.source)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-muted">{entry.createdBy ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

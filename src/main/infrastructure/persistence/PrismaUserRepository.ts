@@ -3,49 +3,50 @@ import bcrypt from 'bcryptjs'
 import type { User } from '@shared/types'
 import type { IUserRepository, CreateUserInput, UpdateUserInput } from '../../core/ports/IUserRepository'
 
+const roleSelect = { select: { id: true, name: true } } as const
+
+function mapUser(u: {
+  id: string
+  username: string
+  fullName: string
+  active: boolean
+  role: { id: string; name: string }
+}): User {
+  return {
+    id: u.id,
+    username: u.username,
+    fullName: u.fullName,
+    role: u.role.name,
+    roleId: u.role.id,
+    active: u.active
+  }
+}
+
 export class PrismaUserRepository implements IUserRepository {
   constructor(private prisma: PrismaClient) {}
 
   async list(): Promise<User[]> {
     const users = await this.prisma.user.findMany({
       orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        role: true,
-        active: true
-      }
+      include: { role: roleSelect }
     })
-    return users as User[]
+    return users.map(mapUser)
   }
 
   async findById(id: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        role: true,
-        active: true
-      }
+      include: { role: roleSelect }
     })
-    return user as User | null
+    return user ? mapUser(user) : null
   }
 
   async findByUsername(username: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { username },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        role: true,
-        active: true
-      }
+      include: { role: roleSelect }
     })
-    return user as User | null
+    return user ? mapUser(user) : null
   }
 
   async create(input: CreateUserInput): Promise<User> {
@@ -55,38 +56,26 @@ export class PrismaUserRepository implements IUserRepository {
         username: input.username,
         password: hashedPassword,
         fullName: input.fullName,
-        role: input.role
+        roleId: input.roleId
       },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        role: true,
-        active: true
-      }
+      include: { role: roleSelect }
     })
-    return user as User
+    return mapUser(user)
   }
 
   async update(id: string, input: UpdateUserInput): Promise<User> {
     const data: Record<string, string> = {}
     if (input.fullName !== undefined) data.fullName = input.fullName
-    if (input.role !== undefined) data.role = input.role
+    if (input.roleId !== undefined) data.roleId = input.roleId
     if (input.password !== undefined) {
       data.password = await bcrypt.hash(input.password, 12)
     }
     const user = await this.prisma.user.update({
       where: { id },
       data,
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        role: true,
-        active: true
-      }
+      include: { role: roleSelect }
     })
-    return user as User
+    return mapUser(user)
   }
 
   async toggleActive(id: string): Promise<User> {
@@ -95,14 +84,8 @@ export class PrismaUserRepository implements IUserRepository {
     const user = await this.prisma.user.update({
       where: { id },
       data: { active: !current.active },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        role: true,
-        active: true
-      }
+      include: { role: roleSelect }
     })
-    return user as User
+    return mapUser(user)
   }
 }

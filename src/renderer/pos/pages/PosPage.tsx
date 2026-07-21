@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Product, Sale, Customer, DocumentType } from '@shared/types'
 import { useNavigation } from '../../shared/hooks/useNavigation'
 import { useAuth } from '../../shared/hooks/useAuth'
+import { useInactivityLock } from '../../shared/hooks/useInactivityLock'
+import LockOverlay from '../../auth/organisms/LockOverlay'
 import TopBar from '../organisms/TopBar'
 import Sidebar from '../organisms/Sidebar'
 import ContentArea from '../organisms/ContentArea'
@@ -26,6 +28,9 @@ export default function PosPage(): JSX.Element {
   const [documentType, setDocumentType] = useState<DocumentType>('TICKET')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [globalDiscount, setGlobalDiscount] = useState(0)
+  const [inactivityTimeout, setInactivityTimeout] = useState(600)
+
+  const { isLocked, lockError, unlock } = useInactivityLock(inactivityTimeout)
 
   const isModalOpen = showPayment || lastSale !== null
 
@@ -43,6 +48,13 @@ export default function PosPage(): JSX.Element {
     loadRate()
     loadReceiptNumber()
     const interval = setInterval(loadRate, 300000)
+
+    window.electronAPI.getConfig().then(res => {
+      if (res.success && res.data?.inactivityTimeout) {
+        setInactivityTimeout(res.data.inactivityTimeout)
+      }
+    })
+
     return () => clearInterval(interval)
   }, [loadRate, loadReceiptNumber])
 
@@ -119,8 +131,7 @@ export default function PosPage(): JSX.Element {
       })),
       documentType,
       discount: data.globalDiscount,
-      paymentMethod: data.paymentMethod,
-      cashAmount: data.cashAmount,
+      payments: data.payments,
       usdRate,
       notes: data.notes,
       userId: session.userId,
@@ -208,6 +219,11 @@ export default function PosPage(): JSX.Element {
           sale={lastSale}
           onNewSale={handleNewSale}
         />
+      )}
+
+      {/* Inactivity Lock Overlay */}
+      {isLocked && (
+        <LockOverlay lockError={lockError} onUnlock={unlock} />
       )}
     </div>
   )

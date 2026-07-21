@@ -1,8 +1,8 @@
 import type { Sale } from '@shared/types'
 
 const METHOD_LABELS: Record<string, string> = {
-  CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Débito',
-  CREDIT_CARD: 'Crédito', DIVISA: 'Divisa', MIXED: 'Mixto'
+  CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Debito',
+  CREDIT_CARD: 'Credito', DIVISA: 'Divisa'
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -34,7 +34,11 @@ export default function SaleRow({ sale, onViewDetail, onCancel }: SaleRowProps):
         </span>
       </td>
       <td className="px-4 py-3 text-body-sm text-ink max-w-[160px] truncate">{customerName}</td>
-      <td className="px-4 py-3 text-caption text-muted">{METHOD_LABELS[sale.paymentMethod] ?? sale.paymentMethod}</td>
+      <td className="px-4 py-3 text-caption text-muted">
+        {sale.payments && sale.payments.length > 0
+          ? sale.payments.map(p => METHOD_LABELS[p.method] ?? p.method).join(', ')
+          : '—'}
+      </td>
       <td className="px-4 py-3 text-body-sm font-medium text-ink text-right">
         ${sale.total.toFixed(2)}
         <span className="block text-caption text-muted-soft">Bs. {((sale.usdRate ?? 0) > 0 ? sale.total / (sale.usdRate ?? 1) : 0).toFixed(2)}</span>

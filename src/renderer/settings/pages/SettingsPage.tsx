@@ -6,6 +6,8 @@ import CustomersTab from '../organisms/CustomersTab'
 import PluginsTab from '../organisms/PluginsTab'
 import UsdRateTab from '../organisms/UsdRateTab'
 import CompanyTab from '../organisms/CompanyTab'
+import SecurityTab from '../organisms/SecurityTab'
+import FiscalTab from '../organisms/FiscalTab'
 
 type SettingsTab = 'users' | 'taxes' | 'customers' | 'usd-rate' | 'security' | 'company' | 'fiscal'
 
@@ -45,17 +47,9 @@ export default function SettingsPage(): JSX.Element {
         {activeTab === 'customers' && <CustomersTab />}
         {activeTab === 'plugins' && <PluginsTab />}
         {activeTab === 'usd-rate' && <UsdRateTab />}
-        {activeTab === 'security' && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-body-sm text-muted-soft">Configuración de seguridad — próximamente</p>
-          </div>
-        )}
+        {activeTab === 'security' && <SecurityTab />}
         {activeTab === 'company' && <CompanyTab />}
-        {activeTab === 'fiscal' && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-body-sm text-muted-soft">Configuración fiscal — próximamente</p>
-          </div>
-        )}
+        {activeTab === 'fiscal' && <FiscalTab />}
       </div>
     </div>
   )

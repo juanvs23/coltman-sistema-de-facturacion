@@ -4,12 +4,12 @@ export type CreateUserInput = {
   username: string
   password: string
   fullName: string
-  role: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+  roleId: string
 }
 
 export type UpdateUserInput = {
   fullName?: string
-  role?: 'SELLER' | 'ADMIN' | 'SUPERADMIN'
+  roleId?: string
   password?: string
 }
 

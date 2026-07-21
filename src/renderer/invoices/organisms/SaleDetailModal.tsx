@@ -8,8 +8,8 @@ interface SaleDetailModalProps {
 }
 
 const METHOD_LABELS: Record<string, string> = {
-  CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Débito',
-  CREDIT_CARD: 'Crédito', DIVISA: 'Divisa', MIXED: 'Mixto'
+  CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Debito',
+  CREDIT_CARD: 'Credito', DIVISA: 'Divisa'
 }
 
 export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId }: SaleDetailModalProps): JSX.Element {
@@ -96,10 +96,17 @@ export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId
 
         {/* Meta */}
         <div className="mt-4 border-t border-hairline pt-3 space-y-1">
-          <div className="flex justify-between text-caption">
-            <span className="text-muted">Método</span>
-            <span className="text-ink">{METHOD_LABELS[sale.paymentMethod] ?? sale.paymentMethod}</span>
-          </div>
+          {sale.payments && sale.payments.length > 0 && (
+            <div className="mb-2">
+              <span className="text-caption text-muted">Metodo de pago</span>
+              {sale.payments.map(p => (
+                <div key={p.id} className="flex justify-between text-caption">
+                  <span className="text-ink">{METHOD_LABELS[p.method] ?? p.method}</span>
+                  <span className="text-ink">Bs. {p.amountBs.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex justify-between text-caption">
             <span className="text-muted">Vendedor</span>
             <span className="text-ink">{sale.user?.fullName ?? '—'}</span>

@@ -1,5 +1,10 @@
 import type { Sale } from '@shared/types'
 
+const METHOD_LABELS: Record<string, string> = {
+  CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Debito',
+  CREDIT_CARD: 'Credito', DIVISA: 'Divisa'
+}
+
 interface ReceiptConfirmProps {
   sale: Sale
   onNewSale: () => void
@@ -61,9 +66,20 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
               <span>${(sale.total / sale.usdRate).toFixed(2)}</span>
             </div>
           )}
-          {'notes' in sale && (sale as { notes?: string }).notes && (
+          {sale.payments && sale.payments.length > 0 && (
+            <div className="border-t border-hairline pt-2 mt-1 space-y-1">
+              <p className="text-caption text-muted text-left">Metodo de pago</p>
+              {sale.payments.map(p => (
+                <div key={p.id} className="flex justify-between text-caption">
+                  <span className="text-muted">{METHOD_LABELS[p.method] ?? p.method}</span>
+                  <span className="text-ink">Bs. {p.amountBs.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {sale.notes && (
             <div className="flex justify-between text-caption text-muted-soft pt-1 border-t border-hairline mt-1">
-              <span>{(sale as { notes: string }).notes}</span>
+              <span>{sale.notes}</span>
             </div>
           )}
         </div>

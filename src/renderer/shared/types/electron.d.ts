@@ -5,6 +5,7 @@ interface ElectronAPI {
   login: (credentials: LoginRequest) => Promise<IpcResponse<AuthSession>>
   logout: () => Promise<IpcResponse>
   getSession: () => Promise<IpcResponse<AuthSession | null>>
+  unlock: (password: string) => Promise<IpcResponse<AuthSession>>
 
   // Products
   listProducts: (activeOnly?: boolean) => Promise<IpcResponse<Product[]>>
@@ -36,8 +37,7 @@ interface ElectronAPI {
   createSale: (sale: {
     items: Array<{ productId: string; quantity: number; priceUsd: number; discount?: number }>
     documentType: import('@shared/types').DocumentType
-    paymentMethod: string
-    cashAmount?: number
+    payments: Array<{ method: string; amountBs: number; reference?: string }>
     discount?: number
     usdRate: number
     notes?: string
@@ -61,7 +61,8 @@ interface ElectronAPI {
   getIvaReport: (yearMonth?: string) => Promise<IpcResponse<{ period: string; entries: unknown[]; totals: { subtotal: number; taxTotal: number; total: number; discount: number } }>>
 
   // USD Rate
-  getUsdRate: () => Promise<IpcResponse<{ rate: number; source: string }>>
+  getUsdRate: () => Promise<IpcResponse<{ rate: number; source: string; rateId: string | null }>>
+  getUsdRateHistory: () => Promise<IpcResponse<Array<{ id: string; rate: number; source: string; notes: string | null; createdBy: string | null; createdAt: string }>>>
 
   // Config
   getConfig: () => Promise<IpcResponse<{ usdRate: number; usdRateSource: string; currencySymbol: string } & Record<string, unknown>>>
@@ -75,11 +76,22 @@ interface ElectronAPI {
   testPrinter: () => Promise<IpcResponse>
   printReceipt: (data: unknown) => Promise<IpcResponse>
 
+  // Fiscal
+  getFiscalConfig: () => Promise<IpcResponse<{ printerType: string; printerPort: string; printerEnabled: boolean; seniatEnabled: boolean; autoSendSeniat: boolean }>>
+  updateFiscalConfig: (config: Partial<{ printerType: string; printerPort: string; printerEnabled: boolean; seniatEnabled: boolean; autoSendSeniat: boolean }>) => Promise<IpcResponse>
+
   // Users
   listUsers: () => Promise<IpcResponse<User[]>>
-  createUser: (input: { username: string; password: string; fullName: string; role: User['role'] }) => Promise<IpcResponse<User>>
-  updateUser: (id: string, input: { fullName?: string; role?: User['role']; password?: string }) => Promise<IpcResponse<User>>
+  createUser: (input: { username: string; password: string; fullName: string; roleId: string }) => Promise<IpcResponse<User>>
+  updateUser: (id: string, input: { fullName?: string; roleId?: string; password?: string }) => Promise<IpcResponse<User>>
   toggleUserActive: (id: string) => Promise<IpcResponse<User>>
+
+  // Roles & Permissions
+  listRoles: () => Promise<IpcResponse<Array<{ id: string; name: string; description?: string; editable: boolean; permissions: string[]; userCount: number; createdAt: string }>>>
+  createRole: (input: { name: string; description?: string; permissions: string[] }) => Promise<IpcResponse<{ id: string; name: string; description?: string; editable: boolean; permissions: string[] }>>
+  updateRole: (id: string, input: { name?: string; description?: string; permissions?: string[] }) => Promise<IpcResponse<{ id: string; name: string; description?: string; editable: boolean; permissions: string[] }>>
+  deleteRole: (id: string) => Promise<IpcResponse>
+  listPermissions: () => Promise<IpcResponse<Array<{ id: string; handler: string; description: string; category: string }>>>
 
   // Plugins
   listPlugins: () => Promise<IpcResponse<Array<{ id: string; name: string; version: string; description?: string; enabled: boolean; visibility?: string; target?: string; hooks?: string[] }>>>

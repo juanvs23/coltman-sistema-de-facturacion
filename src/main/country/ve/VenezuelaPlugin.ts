@@ -1,5 +1,6 @@
 import type { ICountryPlugin } from '@sistema-facturacion/plugin-api'
 import { validateRif, formatRif, getReceiptFooter } from '@shared/country/ve'
+import type { PrismaClient } from '@prisma/client'
 
 export class VenezuelaPlugin implements ICountryPlugin {
   countryCode = 'VE'
@@ -7,6 +8,9 @@ export class VenezuelaPlugin implements ICountryPlugin {
   currencySymbol = 'Bs.'
   currencyCode = 'VES'
   taxIdLabel = 'RIF'
+  private usdRateHistory: Array<{ rate: number; source: string; date: string }> = []
+
+  constructor(private prisma?: PrismaClient) {}
 
   validateTaxId(taxId: string) {
     return validateRif(taxId)
@@ -44,7 +48,23 @@ export class VenezuelaPlugin implements ICountryPlugin {
     return { lines }
   }
 
-  getDefaultExchangeRate(): number | null {
-    return 48.50 // Tasa BCV inicial — se actualiza desde Settings
+  getDefaultExchangeRate(): number {
+    return 48.50
+  }
+
+  async getRateHistory(): Promise<Array<{ rate: number; source: string; date: string }>> {
+    if (this.prisma) {
+      const rates = await this.prisma.usdRate.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: { rate: true, source: true, createdAt: true }
+      })
+      return rates.map((r) => ({
+        rate: r.rate,
+        source: r.source,
+        date: r.createdAt.toISOString()
+      }))
+    }
+    return this.usdRateHistory
   }
 }

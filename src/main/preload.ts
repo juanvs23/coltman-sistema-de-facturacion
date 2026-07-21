@@ -6,6 +6,7 @@ const electronAPI = {
     ipcRenderer.invoke('auth:login', credentials),
   logout: () => ipcRenderer.invoke('auth:logout'),
   getSession: () => ipcRenderer.invoke('auth:session'),
+  unlock: (password: string) => ipcRenderer.invoke('auth:unlock', password),
 
   // Products
   listProducts: (activeOnly?: boolean) => ipcRenderer.invoke('products:list', activeOnly),
@@ -47,6 +48,7 @@ const electronAPI = {
 
   // USD Rate
   getUsdRate: () => ipcRenderer.invoke('usd:rate'),
+  getUsdRateHistory: () => ipcRenderer.invoke('usd:history'),
 
   // Config
   getConfig: () => ipcRenderer.invoke('config:get'),
@@ -60,16 +62,27 @@ const electronAPI = {
   testPrinter: () => ipcRenderer.invoke('printer:test'),
   printReceipt: (data: unknown) => ipcRenderer.invoke('printer:print-receipt', data),
 
+  // Fiscal
+  getFiscalConfig: () => ipcRenderer.invoke('fiscal:get'),
+  updateFiscalConfig: (config: unknown) => ipcRenderer.invoke('fiscal:update', config),
+
   // Users
   listUsers: () => ipcRenderer.invoke('users:list'),
-  createUser: (input: { username: string; password: string; fullName: string; role: string }) =>
+  createUser: (input: { username: string; password: string; fullName: string; roleId: string }) =>
     ipcRenderer.invoke('users:create', input),
-  updateUser: (id: string, input: { fullName?: string; role?: string; password?: string }) =>
+  updateUser: (id: string, input: { fullName?: string; roleId?: string; password?: string }) =>
     ipcRenderer.invoke('users:update', id, input),
   toggleUserActive: (id: string) => ipcRenderer.invoke('users:toggle-active', id),
 
   // Cash Register
   addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => ipcRenderer.invoke('cash:add-movement', data),
+
+  // Roles
+  listRoles: () => ipcRenderer.invoke('roles:list'),
+  createRole: (input: { name: string; description?: string; permissions: string[] }) => ipcRenderer.invoke('roles:create', input),
+  updateRole: (id: string, input: { name?: string; description?: string; permissions?: string[] }) => ipcRenderer.invoke('roles:update', id, input),
+  deleteRole: (id: string) => ipcRenderer.invoke('roles:delete', id),
+  listPermissions: () => ipcRenderer.invoke('permissions:list'),
 
   // Reports
   getDailyReport: (date?: string) => ipcRenderer.invoke('reports:daily', date),

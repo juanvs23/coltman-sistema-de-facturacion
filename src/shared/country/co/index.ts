@@ -8,8 +8,8 @@ export const COUNTRY_CODE = 'CO'
 export const PAYMENT_METHODS = [
   { id: 'CASH', label: 'Efectivo' },
   { id: 'TRANSFER', label: 'Transferencia / PSE' },
-  { id: 'DEBIT_CARD', label: 'Tarjeta Débito' },
-  { id: 'CREDIT_CARD', label: 'Tarjeta Crédito' },
+  { id: 'DEBIT_CARD', label: 'Tarjeta Debito' },
+  { id: 'CREDIT_CARD', label: 'Tarjeta Credito' },
   { id: 'NEQUI', label: 'Nequi' },
   { id: 'DAVIPLATA', label: 'DaviPlata' }
 ]

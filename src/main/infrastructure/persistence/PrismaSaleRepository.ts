@@ -8,6 +8,7 @@ export class PrismaSaleRepository implements ISaleRepository {
       where: { id },
       include: {
         items: { include: { product: true } },
+        payments: true,
         user: true,
         customer: true
       }
@@ -19,6 +20,7 @@ export class PrismaSaleRepository implements ISaleRepository {
       where: { receiptNumber },
       include: {
         items: { include: { product: true } },
+        payments: true,
         user: true,
         customer: true
       }
@@ -33,7 +35,9 @@ export class PrismaSaleRepository implements ISaleRepository {
       if (filters.from) (where.createdAt as Record<string, Date>).gte = filters.from
       if (filters.to) (where.createdAt as Record<string, Date>).lte = filters.to
     }
-    if (filters.paymentMethod) where.paymentMethod = filters.paymentMethod
+    if (filters.paymentMethod) {
+      where.payments = { some: { method: filters.paymentMethod } }
+    }
     if (filters.userId) where.userId = filters.userId
     if (filters.customerId) where.customerId = filters.customerId
     if (filters.documentType) where.documentType = filters.documentType
@@ -43,6 +47,7 @@ export class PrismaSaleRepository implements ISaleRepository {
       where: where as never,
       include: {
         items: { include: { product: true } },
+        payments: true,
         user: { select: { id: true, username: true, fullName: true } },
         customer: { select: { id: true, taxId: true, name: true } }
       },
@@ -85,6 +90,7 @@ export class PrismaSaleRepository implements ISaleRepository {
         },
         include: {
           items: { include: { product: true } },
+          payments: true,
           user: true,
           customer: true
         }

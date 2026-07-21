@@ -3,14 +3,24 @@ import type { User } from '@shared/types'
 import UserFormModal from './UserFormModal'
 import type { UserFormData } from './UserFormModal'
 
-const ROLE_LABELS: Record<User['role'], string> = {
-  SELLER: 'Vendedor',
-  ADMIN: 'Administrador',
-  SUPERADMIN: 'Superadmin'
+interface RoleOption {
+  id: string
+  name: string
+}
+
+const ROLE_DISPLAY: Record<string, string> = {
+  superadmin: 'Superadmin',
+  admin: 'Administrador',
+  seller: 'Vendedor'
+}
+
+function displayRole(name: string): string {
+  return ROLE_DISPLAY[name] ?? name
 }
 
 export default function UsersTab(): JSX.Element {
   const [users, setUsers] = useState<User[]>([])
+  const [roles, setRoles] = useState<RoleOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -20,14 +30,20 @@ export default function UsersTab(): JSX.Element {
     setLoading(true)
     setError('')
     try {
-      const res = await window.electronAPI.listUsers()
-      if (res.success && res.data) {
-        setUsers(res.data)
+      const [usersRes, rolesRes] = await Promise.all([
+        window.electronAPI.listUsers(),
+        window.electronAPI.listRoles()
+      ])
+      if (usersRes.success && usersRes.data) {
+        setUsers(usersRes.data)
       } else {
-        setError(res.error ?? 'Error al cargar usuarios')
+        setError(usersRes.error ?? 'Error al cargar usuarios')
+      }
+      if (rolesRes.success && rolesRes.data) {
+        setRoles(rolesRes.data.map(r => ({ id: r.id, name: r.name })))
       }
     } catch {
-      setError('Error de conexión con el servidor')
+      setError('Error de conexion con el servidor')
     } finally {
       setLoading(false)
     }
@@ -38,7 +54,12 @@ export default function UsersTab(): JSX.Element {
   }, [loadUsers])
 
   const handleCreate = async (data: UserFormData): Promise<void> => {
-    const res = await window.electronAPI.createUser(data)
+    const res = await window.electronAPI.createUser({
+      username: data.username,
+      fullName: data.fullName,
+      password: data.password,
+      roleId: data.roleId
+    })
     if (res.success) {
       setShowCreate(false)
       await loadUsers()
@@ -51,7 +72,7 @@ export default function UsersTab(): JSX.Element {
     if (!editingUser) return
     const res = await window.electronAPI.updateUser(editingUser.id, {
       fullName: data.fullName,
-      role: data.role,
+      roleId: data.roleId,
       password: data.password || undefined
     })
     if (res.success) {
@@ -127,13 +148,13 @@ export default function UsersTab(): JSX.Element {
                   <td className="px-4 py-3 text-ink">{user.fullName}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-block rounded-full px-2 py-0.5 text-caption
-                      ${user.role === 'SUPERADMIN'
+                      ${user.role === 'superadmin'
                         ? 'bg-warning/10 text-warning'
-                        : user.role === 'ADMIN'
+                        : user.role === 'admin'
                           ? 'bg-info/10 text-info'
                           : 'bg-surface-soft text-muted'
                       }`}>
-                      {ROLE_LABELS[user.role]}
+                      {displayRole(user.role)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -174,6 +195,7 @@ export default function UsersTab(): JSX.Element {
       {showCreate && (
         <UserFormModal
           user={null}
+          roles={roles}
           onClose={() => setShowCreate(false)}
           onSave={handleCreate}
         />
@@ -182,6 +204,7 @@ export default function UsersTab(): JSX.Element {
       {editingUser && (
         <UserFormModal
           user={editingUser}
+          roles={roles}
           onClose={() => setEditingUser(null)}
           onSave={handleUpdate}
         />

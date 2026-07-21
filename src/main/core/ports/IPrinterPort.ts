@@ -34,7 +34,7 @@ export interface ReceiptData {
   subtotal: number
   taxTotal: number
   total: number
-  paymentMethod: string
+  paymentMethods: Array<{ method: string; amountBs: number; reference?: string }>
   usdRate?: number
   createdAt: Date
 }

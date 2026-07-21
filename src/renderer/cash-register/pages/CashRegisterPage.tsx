@@ -24,7 +24,7 @@ interface CashRegisterData {
 
 interface CashSummary {
   register: CashRegisterData | null
-  sales: Array<{ paymentMethod: string; total: number }>
+  sales: Array<{ payments: Array<{ method: string; amountBs: number }> }>
 }
 
 export default function CashRegisterPage(): JSX.Element {
@@ -58,7 +58,9 @@ export default function CashRegisterPage(): JSX.Element {
 
   // Calculate sales totals
   const salesByMethod = (summary?.sales ?? []).reduce((acc, s) => {
-    acc[s.paymentMethod] = (acc[s.paymentMethod] ?? 0) + s.total
+    for (const p of s.payments) {
+      acc[p.method] = (acc[p.method] ?? 0) + p.amountBs
+    }
     return acc
   }, {} as Record<string, number>)
 
