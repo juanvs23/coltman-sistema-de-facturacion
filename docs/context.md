@@ -202,8 +202,8 @@ Todos los módulos core del MVP están implementados. El sistema permite:
 
 En orden de implementación:
 
-- [ ] **2.1 Seguridad (RBAC)**: control de acceso por rol, políticas de contraseña, sesiones, bloqueo por inactividad
-- [ ] **2.2 Pestaña Fiscal**: formulario de impresora fiscal, configuración SENIAT
-- [ ] **2.3 Multi-método de pago**: pago mixto real en una venta (schema + UI)
+- [x] **2.1 Seguridad (RBAC)**: control de acceso por rol, políticas de contraseña, sesiones, bloqueo por inactividad ✅
+- [x] **2.2 Pestaña Fiscal**: formulario de impresora fiscal, configuración SENIAT ✅
+- [x] **2.3 Multi-método de pago**: pago mixto real en una venta (schema + UI) ✅
 - [ ] **2.4 Documentación de usuario**: manual, guía de instalación, FAQ
 - [ ] **2.5 Build instaladores**: Windows (.exe), Linux (AppImage), Mac (.dmg)

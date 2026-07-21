@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.10.0] - 2026-07-20
+
+### Added
+- **Roles dinámicos**: modelos Role, Permission, RolePermission en BD. Guard RBAC consulta permisos desde BD. Roles predefinidos (superadmin/admin/seller) protegidos contra edición.
+- **SecurityTab**: UI para gestionar roles y permisos (crear, editar, eliminar), configurar timeout de inactividad, ver políticas de contraseña y matriz de acceso.
+- **Bloqueo por inactividad**: useInactivityLock hook + LockOverlay. Timeout configurable en Settings. En fallos no cierra sesión — permite reintentar.
+- **Políticas de contraseña**: 8+ caracteres, mayúscula, minúscula, número. Validación en backend y frontend.
+- **FiscalTab**: formulario de impresora fiscal (Bixolon/Epson/Sharp/SAM4s, puerto) + toggles SENIAT (facturación electrónica, envío automático).
+- **Multi-método de pago**: PaymentEntry model. PaymentModal rediseñado con pills de métodos, pago mixto (ej: $10 efectivo + Bs. 200 transferencia). Reflejado en recibo, arqueo de caja, reportes e historial.
+- **Historial USD**: modelo UsdRate con trazabilidad (tasa, fuente, usuario, fecha). UsdRateTab muestra historial de cambios.
+
+### Changed
+- User.role (enum) → User.roleId (FK a Role). AuthSession incluye roleId.
+- Guard RBAC: consulta permisos desde BD con caché de 30s.
+- config:update registra cada cambio de tasa en UsdRate.
+- PaymentModal: nuevo diseño 80vh con método de pills, sin dropdowns.
+
+### Fixed
+- Seed: CompanyConfig usa upsert, limpieza completa de modelos nuevos.
+- Dev mock: updateConfig/getUsdRate/getFiscalConfig funcionales sin localStorage.
+
 ## [0.9.0] - 2026-07-19
 
 ### Added
