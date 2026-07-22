@@ -79,3 +79,54 @@ export interface PluginEventPayload {
   /** Domain-specific data */
   data: Record<string, unknown>
 }
+
+// ─── Hook Priority ──────────────────────────────────────────
+
+/** Numeric priority for hook execution (lower = executed first) */
+export type HookPriority = number
+
+// ─── UI Extension Types ─────────────────────────────────────
+
+/** A menu item that a plugin can inject into the POS sidebar */
+export interface UiMenuItem {
+  /** Unique item identifier (e.g. "fiscal") */
+  id: string
+  /** Display label (e.g. "Fiscal") */
+  label: string
+  /** Icon name or path */
+  icon: string
+  /** Route path to navigate to on click */
+  route: string
+  /** Optional permission required to see this item */
+  permission?: string
+}
+
+/** A route that a plugin can register in the POS router */
+export interface UiRoute {
+  /** Route path (e.g. "/plugins/fiscal") */
+  path: string
+  /** Component identifier for lazy loading */
+  component: string
+  /** Optional permission required to access this route */
+  permission?: string
+}
+
+/** A settings tab that a plugin can inject into the Settings panel */
+export interface UiSettingsTab {
+  /** Tab identifier (e.g. "fiscal-config") */
+  id: string
+  /** Display label (e.g. "Configuración Fiscal") */
+  label: string
+  /** Component identifier for lazy loading */
+  component: string
+}
+
+// ─── Data Model Types ───────────────────────────────────────
+
+/** Schema definition registered by a plugin */
+export interface PluginSchema {
+  /** Plugin id that owns this schema */
+  id: string
+  /** Raw Prisma schema string */
+  schema: string
+}

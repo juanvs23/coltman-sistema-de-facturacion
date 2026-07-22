@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../infrastructure/persistence/prisma'
@@ -7,6 +7,8 @@ import type { IUserRepository } from '../core/ports/IUserRepository'
 import type { IProductRepository } from '../core/ports/IProductRepository'
 import type { ICustomerRepository } from '../core/ports/ICustomerRepository'
 import type { ISaleRepository, SaleFilters } from '../core/ports/ISaleRepository'
+import type { AppKernel } from '../core/kernel/AppKernel'
+import type { UiRegistryState } from '@shared/types'
 import { guard, AuthError, validatePassword, invalidatePermissionCache } from './guards'
 import { sessionManager } from './SessionManager'
 
@@ -25,6 +27,7 @@ export function validateSaleInput(input: {
  */
 export function registerIpcHandlers(deps: {
   pluginLoader: PluginLoader
+  kernel: AppKernel
   userRepository?: IUserRepository
   productRepository?: IProductRepository
   customerRepository?: ICustomerRepository
@@ -918,6 +921,89 @@ export function registerIpcHandlers(deps: {
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
       return { success: false, error: 'Error al actualizar configuracion fiscal' }
+    }
+  })
+
+  // ─── UiRegistry IPC ───────────────────────────────────────
+  ipcMain.handle('ui-registry:get-state', async (event) => {
+    try {
+      await guard(event, 'ui-registry:get-state')
+      const uiRegistry = deps.kernel.uiRegistry
+      const state: UiRegistryState = {
+        menuItems: Array.from(uiRegistry.menuItems),
+        routes: Array.from(uiRegistry.routes),
+        settingsTabs: Array.from(uiRegistry.settingsTabs)
+      }
+      return { success: true, data: state }
+    } catch (error) {
+      if (error instanceof AuthError) return { success: false, error: error.message }
+      return { success: false, error: 'Error al obtener estado UI' }
+    }
+  })
+
+  // ─── Kernel IPC — Country Plugin ──────────────────────────
+  ipcMain.handle('kernel:get-country-plugin', async () => {
+    try {
+      const plugin = await deps.kernel.getCountryPlugin()
+      if (!plugin) {
+        return { success: true, data: null }
+      }
+      return {
+        success: true,
+        data: {
+          countryCode: plugin.countryCode,
+          countryName: plugin.countryName,
+          currencySymbol: plugin.currencySymbol,
+          currencyCode: plugin.currencyCode,
+          taxIdLabel: plugin.taxIdLabel,
+          paymentMethods: plugin.getPaymentMethods(),
+          defaultTaxes: plugin.getDefaultTaxes(),
+          defaultExchangeRate: plugin.getDefaultExchangeRate()
+        }
+      }
+    } catch (error) {
+      return { success: true, data: null }
+    }
+  })
+
+  ipcMain.handle('kernel:get-country-config', async () => {
+    try {
+      const config = await prisma.appConfig.findUnique({ where: { id: 'default' } })
+      return { success: true, data: { country: config?.country ?? 'VE' } }
+    } catch (error) {
+      return { success: true, data: { country: 'VE' } }
+    }
+  })
+
+  ipcMain.handle('ui-registry:subscribe', async (event) => {
+    try {
+      await guard(event, 'ui-registry:subscribe')
+      const uiRegistry = deps.kernel.uiRegistry
+      const state: UiRegistryState = {
+        menuItems: Array.from(uiRegistry.menuItems),
+        routes: Array.from(uiRegistry.routes),
+        settingsTabs: Array.from(uiRegistry.settingsTabs)
+      }
+
+      // Subscribe to future changes (if BrowserWindow is available)
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win) {
+        uiRegistry.onChange(() => {
+          if (!win.isDestroyed()) {
+            const updated: UiRegistryState = {
+              menuItems: Array.from(uiRegistry.menuItems),
+              routes: Array.from(uiRegistry.routes),
+              settingsTabs: Array.from(uiRegistry.settingsTabs)
+            }
+            win.webContents.send('ui-registry:updated', updated)
+          }
+        })
+      }
+
+      return { success: true, data: state }
+    } catch (error) {
+      if (error instanceof AuthError) return { success: false, error: error.message }
+      return { success: false, error: 'Error al suscribirse a UI registry' }
     }
   })
 

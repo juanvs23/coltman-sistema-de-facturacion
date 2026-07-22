@@ -1,5 +1,6 @@
 import type { Product } from '@shared/types'
 import ProductBadge from '../atoms/ProductBadge'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface ProductRowProps {
   product: Product
@@ -8,6 +9,7 @@ interface ProductRowProps {
 }
 
 export default function ProductRow({ product, onEdit, onDelete }: ProductRowProps): JSX.Element {
+  const { currencySymbol } = useCountry()
   const taxNames = (product.taxes ?? [])
     .map(pt => pt.tax?.name ?? '')
     .filter(Boolean)
@@ -50,7 +52,7 @@ export default function ProductRow({ product, onEdit, onDelete }: ProductRowProp
       </td>
       <td className="px-4 py-3 text-right">
         <p className="text-body-sm text-ink font-medium">${product.priceUsd.toFixed(2)}</p>
-        <p className="text-caption text-muted-soft">Bs. {product.price.toFixed(2)}</p>
+        <p className="text-caption text-muted-soft">{currencySymbol} {product.price.toFixed(2)}</p>
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-2">

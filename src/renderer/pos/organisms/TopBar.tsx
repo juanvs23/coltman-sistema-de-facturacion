@@ -1,6 +1,7 @@
 import type { DocumentType } from '@shared/types'
 import { useAuth } from '../../shared/hooks/useAuth'
 import { useTheme } from '../../shared/hooks/useTheme'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface TopBarProps {
   documentType: DocumentType
@@ -12,6 +13,7 @@ interface TopBarProps {
 export default function TopBar({ documentType, onDocumentTypeChange, usdRate, receiptNumber }: TopBarProps): JSX.Element {
   const { session, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { currencySymbol } = useCountry()
 
   const docLabel = documentType === 'FACTURA' ? 'Factura' : 'Ticket'
   const paddedNumber = String(receiptNumber).padStart(4, '0')
@@ -53,7 +55,7 @@ export default function TopBar({ documentType, onDocumentTypeChange, usdRate, re
           <div className="rounded-md bg-surface-soft px-3 py-1">
             <span className="text-caption text-muted">Tasa: </span>
             <span className="text-caption font-mono font-medium text-ink">
-              Bs. {usdRate.toFixed(2)}
+              {currencySymbol} {usdRate.toFixed(2)}
             </span>
           </div>
           <div className="rounded-md bg-primary/10 px-3 py-1">

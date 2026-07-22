@@ -1,0 +1,13 @@
+phases:
+  explore: completed
+  propose: completed
+  spec: completed
+  design: completed
+  tasks: completed
+  apply: pending
+  verify: pending
+  archive: pending
+
+current_phase: tasks
+chain_strategy: stacked-to-dev
+target_branch: dev

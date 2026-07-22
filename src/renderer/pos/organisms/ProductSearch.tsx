@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Product } from '@shared/types'
 import { ImSearch } from 'react-icons/im'
 import ProductGrid from '../molecules/ProductGrid'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface ProductSearchProps {
   onSelectProduct: (product: Product) => void
@@ -15,6 +16,7 @@ export default function ProductSearch({ onSelectProduct, focusKey = 0 }: Product
   const [error, setError] = useState('')
   const [usdRate, setUsdRate] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const { currencySymbol } = useCountry()
 
   // Focus search input when focusKey changes (e.g. F2 pressed)
   useEffect(() => {
@@ -92,7 +94,7 @@ export default function ProductSearch({ onSelectProduct, focusKey = 0 }: Product
           {usdRate > 0 && (
             <div className="flex items-center justify-between">
               <p className="text-caption text-muted-soft">{filtered.length} productos</p>
-              <p className="text-caption text-muted-soft">Tasa: Bs. {usdRate.toFixed(2)}</p>
+              <p className="text-caption text-muted-soft">Tasa: {currencySymbol} {usdRate.toFixed(2)}</p>
             </div>
           )}
           <ProductGrid products={filtered} onSelect={onSelectProduct} />

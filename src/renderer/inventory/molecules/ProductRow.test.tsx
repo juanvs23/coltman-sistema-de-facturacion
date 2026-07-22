@@ -26,7 +26,7 @@ describe('ProductRow', () => {
 
     expect(screen.getByText('P001')).toBeInTheDocument()
     expect(screen.getByText('Producto de prueba')).toBeInTheDocument()
-    expect(screen.getByText('Bs. 25.50')).toBeInTheDocument()
+    expect(screen.getByText('$ 25.50')).toBeInTheDocument()
     expect(screen.getByText('$0.53')).toBeInTheDocument()
     expect(screen.getByText('General')).toBeInTheDocument()
   })

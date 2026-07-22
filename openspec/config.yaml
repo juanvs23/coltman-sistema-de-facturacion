@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Electron 32 + TypeScript 5.5 (strict) + React 18 + Prisma 6 + SQLite (better-sqlite3)
+  Architecture: Hexagonal + Screaming Architecture + Atomic Design
+  Testing: Vitest 2.x + React Testing Library + jsdom
+  Style: Dark mode first, Cal.com design system, Tailwind CSS 3.4
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Use table format for scope and risks
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Every requirement MUST have at least one scenario
+  design:
+    - Include ASCII flow diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Reference concrete file paths
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Reference specific file paths
+  apply:
+    - Follow existing code patterns (hexagonal + screaming architecture)
+    tdd: true
+    test_command: "vitest run"
+  verify:
+    test_command: "vitest run"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

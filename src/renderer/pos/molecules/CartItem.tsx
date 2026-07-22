@@ -1,5 +1,6 @@
 import type { CartEntry } from '../organisms/ShoppingCart'
 import QuantityInput from '../atoms/QuantityInput'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface CartItemProps {
   entry: CartEntry
@@ -13,6 +14,7 @@ export default function CartItem({ entry, usdRate, onUpdateQuantity, onUpdateDis
   const lineSubtotalUsd = entry.product.priceUsd * entry.quantity
   const lineDiscount = entry.discount ?? 0
   const discountedUsd = lineSubtotalUsd - lineDiscount
+  const { currencySymbol } = useCountry()
 
   const discountPct = lineSubtotalUsd > 0 ? Math.round((lineDiscount / lineSubtotalUsd) * 100) : 0
 
@@ -38,7 +40,7 @@ export default function CartItem({ entry, usdRate, onUpdateQuantity, onUpdateDis
         />
         <div className="text-right w-24">
           <p className="text-body-sm font-medium text-ink">${discountedUsd.toFixed(2)}</p>
-          <p className="text-caption text-muted-soft">Bs. {(discountedUsd * usdRate).toFixed(2)}</p>
+          <p className="text-caption text-muted-soft">{currencySymbol} {(discountedUsd * usdRate).toFixed(2)}</p>
         </div>
         <button
           onClick={() => onRemove(entry.product.id)}

@@ -74,9 +74,6 @@ const electronAPI = {
     ipcRenderer.invoke('users:update', id, input),
   toggleUserActive: (id: string) => ipcRenderer.invoke('users:toggle-active', id),
 
-  // Cash Register
-  addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => ipcRenderer.invoke('cash:add-movement', data),
-
   // Roles
   listRoles: () => ipcRenderer.invoke('roles:list'),
   createRole: (input: { name: string; description?: string; permissions: string[] }) => ipcRenderer.invoke('roles:create', input),
@@ -93,7 +90,11 @@ const electronAPI = {
   // Plugins
   listPlugins: () => ipcRenderer.invoke('plugins:list'),
   installPlugin: (source: string) => ipcRenderer.invoke('plugins:install', source),
-  togglePluginActive: (id: string) => ipcRenderer.invoke('plugins:toggle-active', id)
+  togglePluginActive: (id: string) => ipcRenderer.invoke('plugins:toggle-active', id),
+
+  // Kernel / Country Plugin
+  getCountryPlugin: () => ipcRenderer.invoke('kernel:get-country-plugin'),
+  getCountryConfig: () => ipcRenderer.invoke('kernel:get-country-config')
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)

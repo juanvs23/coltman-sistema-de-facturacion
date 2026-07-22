@@ -65,5 +65,9 @@ window.electronAPI = {
   getIvaReport: async () => ({ success: true, data: { period: '2026-07', entries: [], totals: { subtotal: 0, taxTotal: 0, total: 0, discount: 0 } } }),
   listPlugins: async () => ({ success: true, data: [] }),
   installPlugin: async () => ({ success: false, error: 'Mock: Not implemented' }),
-  togglePluginActive: async () => ({ success: true, data: { active: true } })
+  togglePluginActive: async () => ({ success: true, data: { active: true } }),
+
+  // Kernel / Country Plugin
+  getCountryPlugin: async () => ({ success: true, data: null }),
+  getCountryConfig: async () => ({ success: true, data: { country: 'VE' } })
 } as unknown as Window['electronAPI']

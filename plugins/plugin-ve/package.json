@@ -1,0 +1,8 @@
+{
+  "name": "@sistema-facturacion/plugin-ve",
+  "version": "1.0.0",
+  "description": "Regionalización Venezuela — configuración fiscal RIF, IVA, SENIAT",
+  "main": "src/index.ts",
+  "private": true,
+  "license": "MIT"
+}

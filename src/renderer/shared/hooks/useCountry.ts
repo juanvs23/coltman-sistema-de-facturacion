@@ -1,78 +1,79 @@
-import { useState, useEffect } from 'react'
-import type { TaxIdValidation } from '@sistema-facturacion/plugin-api'
+import { useState, useEffect, useCallback } from 'react'
 
-export interface CountryData {
-  code: string
-  taxIdLabel: string
+export interface CountryInfo {
+  countryCode: string
+  countryName: string
   currencySymbol: string
   currencyCode: string
+  taxIdLabel: string
   paymentMethods: Array<{ id: string; label: string }>
-  getReceiptFooter: (type: 'FACTURA' | 'TICKET') => string[]
-  validateTaxId: (taxId: string) => TaxIdValidation
-  formatTaxId: (raw: string) => string
-  formatCurrency: (amount: number) => string
+  defaultTaxes: Array<{ name: string; rate: number; description?: string }>
+  defaultExchangeRate: number | null
+  loading: boolean
 }
 
-const NEUTRAL: CountryData = {
-  code: '',
-  taxIdLabel: 'ID Fiscal',
+const NEUTRAL: CountryInfo = {
+  countryCode: '',
+  countryName: '',
   currencySymbol: '$',
   currencyCode: 'USD',
+  taxIdLabel: 'Tax ID',
   paymentMethods: [
     { id: 'CASH', label: 'Efectivo' },
     { id: 'TRANSFER', label: 'Transferencia' },
     { id: 'DEBIT_CARD', label: 'Tarjeta de Debito' },
     { id: 'CREDIT_CARD', label: 'Tarjeta de Credito' }
   ],
-  getReceiptFooter: () => ['Gracias por su compra'],
-  validateTaxId: () => ({ valid: true }),
-  formatTaxId: (raw: string) => raw,
-  formatCurrency: (amount: number) => `$${amount.toFixed(2)}`
+  defaultTaxes: [],
+  defaultExchangeRate: null,
+  loading: false
 }
 
-async function loadCountryData(): Promise<CountryData> {
-  try {
-    const res = await window.electronAPI.listPlugins()
-    if (!res.success || !res.data) return NEUTRAL
+/**
+ * Hook that fetches the active country plugin data from the kernel via IPC.
+ * Returns neutral defaults when no country plugin is active.
+ */
+export function useCountry(): CountryInfo {
+  const [country, setCountry] = useState<CountryInfo>({ ...NEUTRAL, loading: true })
 
-    for (const plugin of res.data) {
-      if (!plugin.enabled) continue
-      const match = plugin.id.match(/^plugin-([a-z]{2})$/)
-      if (!match) continue
-      const code = match[1].toUpperCase()
+  const load = useCallback(async () => {
+    try {
+      const [pluginRes, configRes] = await Promise.all([
+        window.electronAPI.getCountryPlugin(),
+        window.electronAPI.getCountryConfig()
+      ])
 
-      if (code === 'VE') {
-        const ve = await import('@shared/country/ve')
-        return {
-          code: 'VE', taxIdLabel: ve.TAX_ID_LABEL, currencySymbol: ve.CURRENCY_SYMBOL,
-          currencyCode: ve.CURRENCY_CODE, paymentMethods: ve.PAYMENT_METHODS,
-          getReceiptFooter: ve.getReceiptFooter, validateTaxId: ve.validateRif,
-          formatTaxId: ve.formatRif, formatCurrency: ve.formatCurrency
-        }
+      if (pluginRes.success && pluginRes.data) {
+        setCountry({
+          countryCode: pluginRes.data.countryCode,
+          countryName: pluginRes.data.countryName,
+          currencySymbol: pluginRes.data.currencySymbol,
+          currencyCode: pluginRes.data.currencyCode,
+          taxIdLabel: pluginRes.data.taxIdLabel,
+          paymentMethods: pluginRes.data.paymentMethods,
+          defaultTaxes: pluginRes.data.defaultTaxes,
+          defaultExchangeRate: pluginRes.data.defaultExchangeRate,
+          loading: false
+        })
+      } else {
+        // No plugin active — use neutral defaults, derive country from config
+        const configCountry = configRes.success && configRes.data ? configRes.data.country : ''
+        setCountry({
+          ...NEUTRAL,
+          countryCode: configCountry,
+          loading: false
+        })
       }
-      if (code === 'CO') {
-        const co = await import('@shared/country/co')
-        return {
-          code: 'CO', taxIdLabel: co.TAX_ID_LABEL, currencySymbol: co.CURRENCY_SYMBOL,
-          currencyCode: co.CURRENCY_CODE, paymentMethods: co.PAYMENT_METHODS,
-          getReceiptFooter: () => co.RECEIPT_FOOTER, validateTaxId: co.validateNit,
-          formatTaxId: co.formatNit, formatCurrency: co.formatCurrency
-        }
-      }
+    } catch {
+      setCountry({ ...NEUTRAL, loading: false })
     }
-    return NEUTRAL
-  } catch {
-    return NEUTRAL
-  }
-}
-
-/** Hook que carga el país activo una vez al montar. Si se cambia el plugin, la app se reinicia. */
-export function useCountry(): CountryData {
-  const [country, setCountry] = useState<CountryData>(NEUTRAL)
+  }, [])
 
   useEffect(() => {
-    loadCountryData().then(setCountry)
-  }, [])
+    load()
+  }, [load])
 
   return country
 }
+
+// CountryPluginData is defined in src/renderer/shared/types/electron.d.ts

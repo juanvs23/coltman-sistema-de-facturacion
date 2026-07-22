@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'plugins/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -18,7 +18,9 @@ export default defineConfig({
     alias: {
       '@main': path.resolve(__dirname, 'src/main'),
       '@renderer': path.resolve(__dirname, 'src/renderer'),
-      '@shared': path.resolve(__dirname, 'src/shared')
+      '@shared': path.resolve(__dirname, 'src/shared'),
+      '@plugin-api': path.resolve(__dirname, 'plugin-api/src'),
+      '@sistema-facturacion/plugin-api': path.resolve(__dirname, 'plugin-api/src')
     }
   }
 })

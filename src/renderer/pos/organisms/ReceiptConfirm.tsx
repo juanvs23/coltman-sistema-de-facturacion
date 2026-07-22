@@ -1,4 +1,5 @@
 import type { Sale } from '@shared/types'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 const METHOD_LABELS: Record<string, string> = {
   CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Debito',
@@ -12,6 +13,7 @@ interface ReceiptConfirmProps {
 
 export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps): JSX.Element {
   const isFactura = sale.documentType === 'FACTURA'
+  const { currencySymbol } = useCountry()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -44,21 +46,21 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
         <div className="my-4 border-t border-b border-hairline py-3 space-y-1">
           <div className="flex justify-between text-body-sm">
             <span className="text-muted">Subtotal</span>
-            <span className="text-ink">Bs. {sale.subtotal.toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {sale.subtotal.toFixed(2)}</span>
           </div>
           {sale.discount > 0 && (
             <div className="flex justify-between text-body-sm">
               <span className="text-success">Descuento</span>
-              <span className="text-success">−Bs. {sale.discount.toFixed(2)}</span>
+              <span className="text-success">−{currencySymbol} {sale.discount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between text-body-sm">
             <span className="text-muted">IVA</span>
-            <span className="text-ink">Bs. {sale.taxTotal.toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {sale.taxTotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm font-bold">
             <span className="text-ink">Total</span>
-            <span className="text-ink">Bs. {sale.total.toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {sale.total.toFixed(2)}</span>
           </div>
           {sale.usdRate && sale.usdRate > 0 && (
             <div className="flex justify-between text-caption text-muted-soft">
@@ -72,7 +74,7 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
               {sale.payments.map(p => (
                 <div key={p.id} className="flex justify-between text-caption">
                   <span className="text-muted">{METHOD_LABELS[p.method] ?? p.method}</span>
-                  <span className="text-ink">Bs. {p.amountBs.toFixed(2)}</span>
+                  <span className="text-ink">{currencySymbol} {p.amountBs.toFixed(2)}</span>
                 </div>
               ))}
             </div>

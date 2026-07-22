@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface FiscalConfigData {
   printerType: string
@@ -16,6 +17,8 @@ const PRINTER_TYPES = [
 ]
 
 export default function FiscalTab(): JSX.Element {
+  const { countryCode } = useCountry()
+  const isVenezuela = countryCode === 'VE'
   const [config, setConfig] = useState<FiscalConfigData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -125,49 +128,51 @@ export default function FiscalTab(): JSX.Element {
         </div>
       </section>
 
-      {/* SENIAT */}
-      <section>
-        <h3 className="text-title-sm text-ink mb-1">SENIAT</h3>
-        <p className="text-body-sm text-muted">
-          Configuracion para facturacion electronica ante el SENIAT.
-        </p>
+      {/* SENIAT — Solo visible para Venezuela */}
+      {isVenezuela && (
+        <section>
+          <h3 className="text-title-sm text-ink mb-1">SENIAT</h3>
+          <p className="text-body-sm text-muted">
+            Configuracion para facturacion electronica ante el SENIAT.
+          </p>
 
-        <div className="mt-4 rounded-lg border border-hairline bg-canvas p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-body-sm font-medium text-ink">Facturacion electronica SENIAT</label>
-              <p className="text-caption text-muted-soft">Habilita el envio automatico de facturas al SENIAT</p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={form.seniatEnabled}
-              onClick={() => setForm({ ...form, seniatEnabled: !form.seniatEnabled })}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${form.seniatEnabled ? 'bg-success' : 'bg-surface-strong'}`}
-            >
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${form.seniatEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
-
-          {form.seniatEnabled && (
-            <div className="flex items-center justify-between pl-4 border-l-2 border-hairline">
+          <div className="mt-4 rounded-lg border border-hairline bg-canvas p-6 space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="text-body-sm font-medium text-ink">Envio automatico</label>
-                <p className="text-caption text-muted-soft">Envia facturas automaticamente al generarlas</p>
+                <label className="text-body-sm font-medium text-ink">Facturacion electronica SENIAT</label>
+                <p className="text-caption text-muted-soft">Habilita el envio automatico de facturas al SENIAT</p>
               </div>
               <button
                 type="button"
                 role="switch"
-                aria-checked={form.autoSendSeniat}
-                onClick={() => setForm({ ...form, autoSendSeniat: !form.autoSendSeniat })}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${form.autoSendSeniat ? 'bg-success' : 'bg-surface-strong'}`}
+                aria-checked={form.seniatEnabled}
+                onClick={() => setForm({ ...form, seniatEnabled: !form.seniatEnabled })}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${form.seniatEnabled ? 'bg-success' : 'bg-surface-strong'}`}
               >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${form.autoSendSeniat ? 'translate-x-5' : 'translate-x-0'}`} />
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${form.seniatEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </div>
-          )}
-        </div>
-      </section>
+
+            {form.seniatEnabled && (
+              <div className="flex items-center justify-between pl-4 border-l-2 border-hairline">
+                <div>
+                  <label className="text-body-sm font-medium text-ink">Envio automatico</label>
+                  <p className="text-caption text-muted-soft">Envia facturas automaticamente al generarlas</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={form.autoSendSeniat}
+                  onClick={() => setForm({ ...form, autoSendSeniat: !form.autoSendSeniat })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${form.autoSendSeniat ? 'bg-success' : 'bg-surface-strong'}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${form.autoSendSeniat ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {error && (
         <div className="rounded-md bg-error/10 px-3 py-2 text-body-sm text-error">{error}</div>

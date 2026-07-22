@@ -1,5 +1,6 @@
 import type { CartEntry } from '../organisms/ShoppingCart'
 import { calcCartTotals } from './calcCartTotals'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface CartSummaryProps {
   entries: CartEntry[]
@@ -10,6 +11,7 @@ interface CartSummaryProps {
 export default function CartSummary({ entries, usdRate, globalDiscount = 0 }: CartSummaryProps): JSX.Element {
   const { subtotalUsd, taxTotalUsd, discountTotalUsd, totalUsd } = calcCartTotals(entries, globalDiscount)
   const hasDiscount = discountTotalUsd > 0 || globalDiscount > 0
+  const { currencySymbol } = useCountry()
 
   return (
     <div className="border-t border-hairline px-4 py-3 space-y-1">
@@ -31,7 +33,7 @@ export default function CartSummary({ entries, usdRate, globalDiscount = 0 }: Ca
         <span className="text-ink">Total</span>
         <div className="text-right">
           <p className="text-ink">${totalUsd.toFixed(2)}</p>
-          <p className="text-caption text-muted-soft">Bs. {(totalUsd * usdRate).toFixed(2)}</p>
+          <p className="text-caption text-muted-soft">{currencySymbol} {(totalUsd * usdRate).toFixed(2)}</p>
         </div>
       </div>
     </div>

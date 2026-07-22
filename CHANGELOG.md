@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.11.0] - 2026-07-21
+
+### Added
+- **Plugin Kernel Architecture**: AppKernel singleton con 4 registries (PluginRegistry, HookBus, UiRegistry, DataModelRegistry)
+- **HookBus**: actions + filters con prioridad numérica estilo WordPress. Sorteo en dispatch, pipeline de filters con reduce.
+- **PluginRegistry**: ciclo de vida (activate/deactivate), auto-descubrimiento desde `plugins/` y `built-in/`, rechazo de IDs duplicados
+- **UiRegistry**: menú lateral, rutas y settings tabs inyectables por plugins con lazy loading via React.lazy + Suspense
+- **DataModelRegistry**: validación de namespace `plugin_<id>_` con regex, migrate() stub
+- **4 contratos plugin-api**: IPluginKernel, IHookSubscriber, IPluginUI, IPluginDataModel
+- **plugin-ve**: VenezuelaPlugin migrado a `plugins/plugin-ve/` como plugin real implementando ICountryPlugin
+- **Core neutro**: sin defaults venezolanos hardcodeados. `AppKernel.getCountryPlugin()` resuelve plugin activo según AppConfig.country
+- **useCountry hook**: hook React que expone currencySymbol, taxIdLabel, paymentMethods, defaultTaxes desde el country plugin activo
+- **PluginProvider + PluginSidebarItems + PluginSettingsTabs**: contexto React + componentes de UI dinámica para plugins
+- **UI dinámica**: `Bs.` → `{currencySymbol}` (~55 componentes), `RIF` → `{taxIdLabel}`, SENIAT condicional a countryCode === 'VE'
+
+### Changed
+- PluginLoader refactorizado: recibe kernel, delega activate/discover a PluginRegistry, dispatchHook() deprecado
+- main.ts: orden de init kernel → loader → handlers
+- handlers.ts: kernel en dependencias, nuevos canales kernel:get-country-plugin y kernel:get-country-config
+- 55+ componentes del renderer usan `currencySymbol` dinámico en lugar de `Bs.` hardcodeado
+- VenezuelaPlugin movido de `src/main/country/ve/` a `plugins/plugin-ve/src/`
+
+### Removed
+- `src/main/country/ve/VenezuelaPlugin.ts` (migrado a plugin-ve)
+- `src/shared/country/ve/index.ts` (migrado a plugin-ve/src/)
+- Dependencias directas del core a lógica venezolana
+
+### Tests
+- 138 tests (24 files) — 0 rotos
+
+---
+
 ## [0.10.0] - 2026-07-20
 
 ### Added

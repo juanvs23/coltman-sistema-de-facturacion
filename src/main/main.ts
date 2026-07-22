@@ -3,17 +3,18 @@ import { join } from 'path'
 import { prisma } from './infrastructure/persistence/prisma'
 import { LicenseManager } from './core/license/LicenseManager'
 import { PluginLoader } from './plugins/PluginLoader'
+import { AppKernel } from './core/kernel/AppKernel'
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository'
 import { PrismaProductRepository } from './infrastructure/persistence/PrismaProductRepository'
 import { PrismaCustomerRepository } from './infrastructure/persistence/PrismaCustomerRepository'
 import { PrismaSaleRepository } from './infrastructure/persistence/PrismaSaleRepository'
-import { VenezuelaPlugin } from './country/ve/VenezuelaPlugin'
 import { registerIpcHandlers } from './ipc/handlers'
 
 export const licenseManager = new LicenseManager()
-export const pluginLoader = new PluginLoader(licenseManager)
 
 let mainWindow: BrowserWindow | null = null
+let kernel: AppKernel | null = null
+let pluginLoader: PluginLoader | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -43,12 +44,31 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  // 1. Initialize kernel first
+  kernel = AppKernel.getInstance()
+  await kernel.init(prisma, {} as never) // BrowserWindow will be set after createWindow
+
+  // 2. Create PluginLoader with kernel reference
+  pluginLoader = new PluginLoader(kernel, licenseManager)
+
+  // 3. Register IPC handlers BEFORE loading plugins
   const userRepository = new PrismaUserRepository(prisma)
   const productRepository = new PrismaProductRepository()
   const customerRepository = new PrismaCustomerRepository()
   const saleRepository = new PrismaSaleRepository()
-  registerIpcHandlers({ pluginLoader, userRepository, productRepository, customerRepository, saleRepository })
+  registerIpcHandlers({
+    pluginLoader,
+    kernel,
+    userRepository,
+    productRepository,
+    customerRepository,
+    saleRepository
+  })
+
+  // 4. Load plugins
   await pluginLoader.loadPlugins()
+
+  // 5. Create window
   createWindow()
 
   app.on('activate', () => {

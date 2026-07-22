@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@renderer/shared/hooks/useAuth'
+import { useCountry } from '@renderer/shared/hooks/useCountry'
 import OpenRegisterModal from '../organisms/OpenRegisterModal'
 import CloseRegisterModal from '../organisms/CloseRegisterModal'
 import CashMovementForm from '../organisms/CashMovementForm'
@@ -29,6 +30,7 @@ interface CashSummary {
 
 export default function CashRegisterPage(): JSX.Element {
   const { session } = useAuth()
+  const { currencySymbol } = useCountry()
   const [summary, setSummary] = useState<CashSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -149,15 +151,15 @@ export default function CashRegisterPage(): JSX.Element {
             <div className="grid grid-cols-3 gap-4">
               <div className="rounded-lg border border-hairline bg-surface-card p-4">
                 <p className="text-caption text-muted">Apertura</p>
-                <p className="text-title-sm text-ink">Bs. {openingAmount.toFixed(2)}</p>
+                <p className="text-title-sm text-ink">{currencySymbol} {openingAmount.toFixed(2)}</p>
               </div>
               <div className="rounded-lg border border-hairline bg-surface-card p-4">
                 <p className="text-caption text-muted">Ventas del día</p>
-                <p className="text-title-sm text-ink">Bs. {salesTotal.toFixed(2)}</p>
+                <p className="text-title-sm text-ink">{currencySymbol} {salesTotal.toFixed(2)}</p>
               </div>
               <div className="rounded-lg border border-hairline bg-surface-card p-4">
                 <p className="text-caption text-muted">Esperado en caja</p>
-                <p className="text-title-sm text-ink">Bs. {expectedCash.toFixed(2)}</p>
+                <p className="text-title-sm text-ink">{currencySymbol} {expectedCash.toFixed(2)}</p>
               </div>
             </div>
 
@@ -169,7 +171,7 @@ export default function CashRegisterPage(): JSX.Element {
                   {Object.entries(salesByMethod).map(([method, total]) => (
                     <div key={method} className="flex justify-between text-body-sm">
                       <span className="text-muted">{method}</span>
-                      <span className="text-ink">Bs. {total.toFixed(2)}</span>
+                      <span className="text-ink">{currencySymbol} {total.toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -197,7 +199,7 @@ export default function CashRegisterPage(): JSX.Element {
                       </div>
                       <div className="text-right">
                         <span className={`font-medium ${m.type === 'EXPENSE' ? 'text-error' : 'text-ink'}`}>
-                          {m.type === 'EXPENSE' ? '−' : '+'}Bs. {m.amount.toFixed(2)}
+                          {m.type === 'EXPENSE' ? '−' : '+'}{currencySymbol} {m.amount.toFixed(2)}
                         </span>
                         <p className="text-[10px] text-muted-soft">
                           {new Date(m.createdAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })}
@@ -216,10 +218,10 @@ export default function CashRegisterPage(): JSX.Element {
                 <p className="text-caption text-muted">Cerrada por</p>
                 <p className="text-body-sm text-ink">{register.closedBy.fullName}</p>
                 <p className="text-caption text-muted-soft">
-                  Cierre: Bs. {register.closingBalance?.toFixed(2)}
+                  Cierre: {currencySymbol} {register.closingBalance?.toFixed(2)}
                   {register.closingBalance != null && expectedCash > 0 && (
                     <span className={Math.abs(register.closingBalance - expectedCash) > 1 ? 'text-error' : 'text-success'}>
-                      {' · Diferencia: Bs. '}{(register.closingBalance - expectedCash).toFixed(2)}
+                      {' · Diferencia: '}{currencySymbol} {(register.closingBalance - expectedCash).toFixed(2)}
                     </span>
                   )}
                 </p>

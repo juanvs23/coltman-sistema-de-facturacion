@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCountry } from '@renderer/shared/hooks/useCountry'
 
 interface OpenRegisterModalProps {
   onConfirm: (balance: number) => Promise<void>
@@ -9,6 +10,7 @@ export default function OpenRegisterModal({ onConfirm, onCancel }: OpenRegisterM
   const [balance, setBalance] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const { currencySymbol } = useCountry()
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -26,7 +28,7 @@ export default function OpenRegisterModal({ onConfirm, onCancel }: OpenRegisterM
         <h3 className="text-title-sm text-ink mb-4">Abrir caja</h3>
         {error && <div className="mb-3 rounded-md bg-error/10 px-3 py-2 text-body-sm text-error">{error}</div>}
         <div className="flex flex-col gap-1 mb-4">
-          <label className="text-caption text-muted">Monto inicial (Bs.)</label>
+          <label className="text-caption text-muted">Monto inicial ({currencySymbol})</label>
           <input type="number" step="0.01" min="0" value={balance} onChange={e => setBalance(e.target.value)}
             autoFocus placeholder="0.00"
             className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none" />

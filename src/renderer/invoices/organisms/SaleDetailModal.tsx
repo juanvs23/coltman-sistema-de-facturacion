@@ -1,4 +1,5 @@
 import type { Sale } from '@shared/types'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface SaleDetailModalProps {
   sale: Sale
@@ -15,6 +16,7 @@ const METHOD_LABELS: Record<string, string> = {
 export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId }: SaleDetailModalProps): JSX.Element {
   const date = new Date(sale.createdAt)
   const canCancel = sale.status === 'COMPLETED' && sale.userId === currentUserId && !!onCancel
+  const { currencySymbol } = useCountry()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -70,21 +72,21 @@ export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId
         <div className="border-t border-hairline pt-3 space-y-1">
           <div className="flex justify-between text-body-sm">
             <span className="text-muted">Subtotal</span>
-            <span className="text-ink">Bs. {sale.subtotal.toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {sale.subtotal.toFixed(2)}</span>
           </div>
           {sale.discount > 0 && (
             <div className="flex justify-between text-body-sm">
               <span className="text-success">Descuento</span>
-              <span className="text-success">−Bs. {sale.discount.toFixed(2)}</span>
+              <span className="text-success">−{currencySymbol} {sale.discount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between text-body-sm">
             <span className="text-muted">IVA</span>
-            <span className="text-ink">Bs. {sale.taxTotal.toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {sale.taxTotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm font-bold border-t border-hairline pt-2">
             <span className="text-ink">Total</span>
-            <span className="text-ink">Bs. {sale.total.toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {sale.total.toFixed(2)}</span>
           </div>
           {sale.usdRate && sale.usdRate > 0 && (
             <div className="flex justify-between text-caption text-muted-soft">
@@ -102,7 +104,7 @@ export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId
               {sale.payments.map(p => (
                 <div key={p.id} className="flex justify-between text-caption">
                   <span className="text-ink">{METHOD_LABELS[p.method] ?? p.method}</span>
-                  <span className="text-ink">Bs. {p.amountBs.toFixed(2)}</span>
+                  <span className="text-ink">{currencySymbol} {p.amountBs.toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -113,7 +115,7 @@ export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId
           </div>
           <div className="flex justify-between text-caption">
             <span className="text-muted">Tasa USD</span>
-            <span className="text-ink">Bs. {(sale.usdRate ?? 0).toFixed(2)}</span>
+            <span className="text-ink">{currencySymbol} {(sale.usdRate ?? 0).toFixed(2)}</span>
           </div>
           {sale.notes && (
             <div className="flex justify-between text-caption">

@@ -1,0 +1,10 @@
+{
+  "id": "plugin-ve",
+  "name": "Regionalización Venezuela",
+  "version": "1.0.0",
+  "description": "Configuración fiscal y regional para Venezuela",
+  "author": "Tu Empresa",
+  "visibility": "free",
+  "target": "main",
+  "hooks": []
+}

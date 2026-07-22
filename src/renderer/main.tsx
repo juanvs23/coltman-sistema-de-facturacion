@@ -225,6 +225,28 @@ if (!window.electronAPI) {
     updateCompanyConfig: async () => ({ success: true, data: { businessName: 'Mi Negocio C.A.' } }),
     getUsdRate: async () => ({ success: true, data: { rate: 48.50, source: 'bcv' } }),
     getConfig: async () => ({ success: true, data: { country: 'VE', currencySymbol: 'Bs.', usdRate: 48.50, usdRateSource: 'bcv', usdAutoUpdate: false, taxRateDefault: 16, lowStockThreshold: 10, darkMode: false, inactivityTimeout: 600 } }),
+    getCountryPlugin: async () => ({
+      success: true,
+      data: {
+        countryCode: 'VE',
+        countryName: 'Venezuela',
+        currencySymbol: 'Bs.',
+        currencyCode: 'VES',
+        taxIdLabel: 'RIF',
+        paymentMethods: [
+          { id: 'CASH', label: 'Efectivo' },
+          { id: 'TRANSFER', label: 'Transferencia' },
+          { id: 'DEBIT_CARD', label: 'Tarjeta de Débito' },
+          { id: 'CREDIT_CARD', label: 'Tarjeta de Crédito' },
+          { id: 'DIVISA', label: 'Divisa (USD)' }
+        ],
+        defaultTaxes: [
+          { name: 'IVA General 16%', rate: 16.0, description: 'Impuesto al Valor Agregado' }
+        ],
+        defaultExchangeRate: null
+      }
+    }),
+    getCountryConfig: async () => ({ success: true, data: { country: 'VE' } }),
     updateConfig: async (data) => ({ success: true, data }),
     testPrinter: async () => ({ success: false, error: 'No implementado en modo browser' }),
     printReceipt: async () => ({ success: false, error: 'No implementado en modo browser' }),
@@ -320,7 +342,8 @@ if (!window.electronAPI) {
       const current = readPluginState(id)
       writePluginState(id, !current)
       return { success: true, data: { active: !current } }
-    }
+    },
+    subscribeUiRegistry: async () => ({ success: true, data: { menuItems: [], routes: [], settingsTabs: [] } })
   }
 }
 

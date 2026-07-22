@@ -27,11 +27,22 @@ export type {
   PluginEventPayload,
   PluginVisibility,
   PluginTarget,
-  PluginHook
+  PluginHook,
+  HookPriority,
+  UiMenuItem,
+  UiRoute,
+  UiSettingsTab,
+  PluginSchema
 } from './types'
 
 // ─── Plugin Contracts ─────────────────────────────────────────
 export type { IPlugin } from './contracts/IPlugin'
+
+// ─── Kernel Contracts ─────────────────────────────────────────
+export type { IPluginKernel, IPluginRegistry } from './contracts/IPluginKernel'
+export type { IHookSubscriber, HookCallback } from './contracts/IHookSubscriber'
+export type { IPluginUI, UiRegistryChangeCallback } from './contracts/IPluginUI'
+export type { IPluginDataModel } from './contracts/IPluginDataModel'
 
 // ─── Fiscal Printer ───────────────────────────────────────────
 export type {

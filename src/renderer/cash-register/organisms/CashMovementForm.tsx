@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCountry } from '@renderer/shared/hooks/useCountry'
 
 interface CashMovementFormProps {
   registerId: string
@@ -13,6 +14,7 @@ export default function CashMovementForm({ registerId, userId, onDone, onCancel 
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const { currencySymbol } = useCountry()
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -45,7 +47,7 @@ export default function CashMovementForm({ registerId, userId, onDone, onCancel 
         </div>
 
         <div className="flex flex-col gap-1 mb-3">
-          <label className="text-caption text-muted">Monto (Bs.)</label>
+          <label className="text-caption text-muted">Monto ({currencySymbol})</label>
           <input type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)}
             autoFocus placeholder="0.00"
             className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none" />

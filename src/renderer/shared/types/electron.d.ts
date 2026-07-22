@@ -1,4 +1,4 @@
-import type { IpcResponse, AuthSession, LoginRequest, Product, Sale, CompanyConfig } from '@shared/types'
+import type { IpcResponse, AuthSession, LoginRequest, Product, Sale, CompanyConfig, UiRegistryState, CountryPluginData } from '@shared/types'
 
 interface ElectronAPI {
   // Auth
@@ -97,6 +97,13 @@ interface ElectronAPI {
   listPlugins: () => Promise<IpcResponse<Array<{ id: string; name: string; version: string; description?: string; enabled: boolean; visibility?: string; target?: string; hooks?: string[] }>>>
   installPlugin: (source: string) => Promise<IpcResponse>
   togglePluginActive: (id: string) => Promise<IpcResponse<{ active: boolean }>>
+
+  // Kernel / Country Plugin
+  getCountryPlugin: () => Promise<IpcResponse<CountryPluginData | null>>
+  getCountryConfig: () => Promise<IpcResponse<{ country: string }>>
+
+  // UI Registry
+  subscribeUiRegistry?: () => Promise<IpcResponse<UiRegistryState>>
 }
 
 declare global {

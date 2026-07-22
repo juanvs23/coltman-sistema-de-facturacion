@@ -59,6 +59,8 @@ export const PERMISSIONS: Record<string, readonly string[]> = {
   'plugins:list': ROLES.SUPERADMIN,
   'plugins:install': ROLES.SUPERADMIN,
   'plugins:toggle-active': ROLES.SUPERADMIN,
+  'ui-registry:subscribe': ROLES.ANY,
+  'ui-registry:get-state': ROLES.ANY,
 
   // Sales and cash by any authenticated user
   'sales:create': ROLES.ANY,

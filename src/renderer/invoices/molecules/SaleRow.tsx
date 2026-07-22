@@ -1,4 +1,5 @@
 import type { Sale } from '@shared/types'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 const METHOD_LABELS: Record<string, string> = {
   CASH: 'Efectivo', TRANSFER: 'Transferencia', DEBIT_CARD: 'Debito',
@@ -22,6 +23,7 @@ export default function SaleRow({ sale, onViewDetail, onCancel }: SaleRowProps):
   const date = new Date(sale.createdAt)
   const customerName = sale.customer?.name || (sale.documentType === 'FACTURA' ? '—' : 'Consumidor Final')
   const isCancelled = sale.status === 'CANCELLED'
+  const { currencySymbol } = useCountry()
 
   return (
     <tr className={`border-b border-hairline transition-colors hover:bg-surface-soft/50 ${isCancelled ? 'opacity-50' : ''}`}>
@@ -41,7 +43,7 @@ export default function SaleRow({ sale, onViewDetail, onCancel }: SaleRowProps):
       </td>
       <td className="px-4 py-3 text-body-sm font-medium text-ink text-right">
         ${sale.total.toFixed(2)}
-        <span className="block text-caption text-muted-soft">Bs. {((sale.usdRate ?? 0) > 0 ? sale.total / (sale.usdRate ?? 1) : 0).toFixed(2)}</span>
+        <span className="block text-caption text-muted-soft">{currencySymbol} {((sale.usdRate ?? 0) > 0 ? sale.total / (sale.usdRate ?? 1) : 0).toFixed(2)}</span>
       </td>
       <td className="px-4 py-3 text-caption text-muted">{sale.user?.fullName ?? '—'}</td>
       <td className="px-4 py-3 text-caption text-muted">

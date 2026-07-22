@@ -182,3 +182,39 @@ export interface UsdRate {
   source: 'bcv' | 'enparalelo' | 'criptodolar' | 'manual'
   updatedAt: string
 }
+
+// ─── Kernel IPC Bridge Types ─────────────────────────────────
+
+/** State of the UI registry sent to the renderer via IPC */
+export interface UiRegistryState {
+  menuItems: Array<{ id: string; label: string; icon: string; route: string; permission?: string }>
+  routes: Array<{ path: string; component: string; permission?: string }>
+  settingsTabs: Array<{ id: string; label: string; component: string }>
+}
+
+/** Hook definition for IPC bridge */
+export interface PluginHookDef {
+  event: string
+  type: 'action' | 'filter'
+  description?: string
+}
+
+/** Kernel IPC contract — exposed to renderer via preload */
+export interface KernelIpcContract {
+  'ui-registry:subscribe': { channel: 'ui-registry:updated'; response: UiRegistryState }
+  'ui-registry:get-state': { request: void; response: UiRegistryState }
+  'kernel:get-country-plugin': { request: void; response: CountryPluginData | null }
+  'kernel:get-country-config': { request: void; response: { country: string } }
+}
+
+/** Country plugin data returned from kernel IPC */
+export interface CountryPluginData {
+  countryCode: string
+  countryName: string
+  currencySymbol: string
+  currencyCode: string
+  taxIdLabel: string
+  paymentMethods: Array<{ id: string; label: string }>
+  defaultTaxes: Array<{ name: string; rate: number; description?: string }>
+  defaultExchangeRate: number | null
+}

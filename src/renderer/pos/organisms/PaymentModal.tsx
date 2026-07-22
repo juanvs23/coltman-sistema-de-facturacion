@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import type { DocumentType, PaymentInput } from '@shared/types'
 import type { CartEntry } from '../organisms/ShoppingCart'
 import { calcCartTotals } from '../molecules/calcCartTotals'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface PaymentModalProps {
   entries: CartEntry[]
@@ -45,6 +46,7 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const isFactura = documentType === 'FACTURA'
+  const { currencySymbol } = useCountry()
 
   const discountNum = parseFloat(discount) || 0
   const { subtotalUsd, taxTotalUsd, discountTotalUsd, totalUsd } = calcCartTotals(entries, discountNum)
@@ -153,10 +155,10 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
                 <span className="text-ink">Total</span>
                 <div className="text-right">
                   <div className="text-ink">${totalUsd.toFixed(2)}</div>
-                  <div className="text-caption text-muted-soft">Bs. {totalBs.toFixed(2)}</div>
+                  <div className="text-caption text-muted-soft">{currencySymbol} {totalBs.toFixed(2)}</div>
                 </div>
               </div>
-              <Row label="Tasa" value={`Bs. ${usdRate.toFixed(2)}`} muted />
+              <Row label="Tasa" value={`${currencySymbol} ${usdRate.toFixed(2)}`} muted />
             </div>
           </div>
 
@@ -215,7 +217,7 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
             {/* Payment totals */}
             <div className="rounded-lg bg-surface-soft/50 px-4 py-2.5 flex justify-between">
               <span className="text-body-sm text-muted">Pagado</span>
-              <span className="text-body-sm font-medium text-ink">Bs. {paymentsTotal.toFixed(2)}</span>
+              <span className="text-body-sm font-medium text-ink">{currencySymbol} {paymentsTotal.toFixed(2)}</span>
             </div>
 
             {Math.abs(remaining) > 0.01 && (
@@ -224,7 +226,7 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
                   {remaining > 0 ? 'Faltante' : 'Excedente'}
                 </span>
                 <span className="text-body-sm font-bold text-warning">
-                  Bs. {Math.abs(remaining).toFixed(2)}
+                  {currencySymbol} {Math.abs(remaining).toFixed(2)}
                 </span>
               </div>
             )}
@@ -255,7 +257,7 @@ export default function PaymentModal({ entries, usdRate, documentType, customerI
           </button>
           <button type="button" onClick={() => handleSubmit()} disabled={saving}
             className="flex-[2] rounded-lg bg-primary px-4 py-2.5 text-body-sm font-medium text-on-primary hover:bg-primary-active transition-colors disabled:opacity-50">
-            {saving ? 'Procesando...' : `Cobrar Bs. ${totalBs.toFixed(2)}`}
+            {saving ? 'Procesando...' : `Cobrar ${currencySymbol} ${totalBs.toFixed(2)}`}
           </button>
         </div>
       </div>
@@ -281,7 +283,7 @@ function PaymentRowComponent({ row, remaining, onUpdate, onRemove, showRemove }:
         value={row.amount}
         onChange={e => onUpdate(row.key, 'amount', e.target.value)}
         className="flex-1 rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none"
-        placeholder={`Bs. ${remaining.toFixed(2)}`}
+        placeholder={`${currencySymbol} ${remaining.toFixed(2)}`}
         autoFocus
       />
       {row.method === 'TRANSFER' && (

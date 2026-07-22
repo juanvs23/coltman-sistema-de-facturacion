@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface DailyData { date: string; sales: number; total: number; byMethod: Record<string, number> }
 interface ProductRow { name: string; quantity: number; total: number }
@@ -14,6 +15,7 @@ const METHOD_LABELS: Record<string, string> = {
 }
 
 export default function ReportsPage(): JSX.Element {
+  const { currencySymbol, taxIdLabel } = useCountry()
   const [tab, setTab] = useState<Tab>('daily')
   const [daily, setDaily] = useState<DailyData | null>(null)
   const [products, setProducts] = useState<ProductRow[]>([])
@@ -94,11 +96,11 @@ export default function ReportsPage(): JSX.Element {
               </div>
               <div className="rounded-lg border border-hairline bg-surface-card p-4">
                 <p className="text-caption text-muted">Total</p>
-                <p className="text-title-sm text-ink">Bs. {daily.total.toFixed(2)}</p>
+                <p className="text-title-sm text-ink">{currencySymbol} {daily.total.toFixed(2)}</p>
               </div>
               <div className="rounded-lg border border-hairline bg-surface-card p-4">
                 <p className="text-caption text-muted">Ticket promedio</p>
-                <p className="text-title-sm text-ink">Bs. {daily.sales > 0 ? (daily.total / daily.sales).toFixed(2) : '0.00'}</p>
+                <p className="text-title-sm text-ink">{currencySymbol} {daily.sales > 0 ? (daily.total / daily.sales).toFixed(2) : '0.00'}</p>
               </div>
             </div>
             <div className="rounded-lg border border-hairline bg-surface-card p-4">
@@ -106,7 +108,7 @@ export default function ReportsPage(): JSX.Element {
               {Object.entries(daily.byMethod).filter(([k]) => k !== 'count').map(([method, total]) => (
                 <div key={method} className="flex justify-between text-body-sm py-1">
                   <span className="text-muted">{METHOD_LABELS[method] ?? method}</span>
-                  <span className="text-ink">Bs. {total.toFixed(2)}</span>
+                  <span className="text-ink">{currencySymbol} {total.toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -129,7 +131,7 @@ export default function ReportsPage(): JSX.Element {
                   <tr key={p.name} className="border-b border-hairline">
                     <td className="px-4 py-2 text-body-sm text-ink">{p.name}</td>
                     <td className="px-4 py-2 text-body-sm text-ink text-right">{p.quantity}</td>
-                    <td className="px-4 py-2 text-body-sm text-ink text-right">Bs. {p.total.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-body-sm text-ink text-right">{currencySymbol} {p.total.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -153,7 +155,7 @@ export default function ReportsPage(): JSX.Element {
                   <tr key={u.name} className="border-b border-hairline">
                     <td className="px-4 py-2 text-body-sm text-ink">{u.name}</td>
                     <td className="px-4 py-2 text-body-sm text-ink text-right">{u.sales}</td>
-                    <td className="px-4 py-2 text-body-sm text-ink text-right">Bs. {u.total.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-body-sm text-ink text-right">{currencySymbol} {u.total.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -174,19 +176,19 @@ export default function ReportsPage(): JSX.Element {
                 <div className="grid grid-cols-4 gap-4">
                   <div className="rounded-lg border border-hairline bg-surface-card p-3">
                     <p className="text-caption text-muted">Subtotal</p>
-                    <p className="text-body-sm font-medium text-ink">Bs. {iva.totals.subtotal.toFixed(2)}</p>
+                    <p className="text-body-sm font-medium text-ink">{currencySymbol} {iva.totals.subtotal.toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg border border-hairline bg-surface-card p-3">
                     <p className="text-caption text-muted">IVA</p>
-                    <p className="text-body-sm font-medium text-ink">Bs. {iva.totals.taxTotal.toFixed(2)}</p>
+                    <p className="text-body-sm font-medium text-ink">{currencySymbol} {iva.totals.taxTotal.toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg border border-hairline bg-surface-card p-3">
                     <p className="text-caption text-muted">Total</p>
-                    <p className="text-body-sm font-medium text-ink">Bs. {iva.totals.total.toFixed(2)}</p>
+                    <p className="text-body-sm font-medium text-ink">{currencySymbol} {iva.totals.total.toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg border border-hairline bg-surface-card p-3">
                     <p className="text-caption text-muted">{iva.entries.length} facturas</p>
-                    <p className="text-body-sm font-medium text-ink">Bs. {iva.totals.discount.toFixed(2)} desc.</p>
+                    <p className="text-body-sm font-medium text-ink">{currencySymbol} {iva.totals.discount.toFixed(2)} desc.</p>
                   </div>
                 </div>
                 <div className="rounded-lg border border-hairline bg-surface-card overflow-hidden">
@@ -195,7 +197,7 @@ export default function ReportsPage(): JSX.Element {
                       <tr className="border-b border-hairline bg-surface-soft">
                         <th className="px-3 py-2 text-caption text-muted">N°</th>
                         <th className="px-3 py-2 text-caption text-muted">Cliente</th>
-                        <th className="px-3 py-2 text-caption text-muted">RIF</th>
+                        <th className="px-3 py-2 text-caption text-muted">{taxIdLabel}</th>
                         <th className="px-3 py-2 text-caption text-muted text-right">Base imp.</th>
                         <th className="px-3 py-2 text-caption text-muted text-right">IVA</th>
                         <th className="px-3 py-2 text-caption text-muted text-right">Total</th>
@@ -207,9 +209,9 @@ export default function ReportsPage(): JSX.Element {
                           <td className="px-3 py-1.5 font-mono text-ink">{String(e.receiptNumber).padStart(4,'0')}</td>
                           <td className="px-3 py-1.5 text-ink">{e.customerName}</td>
                           <td className="px-3 py-1.5 text-muted font-mono text-caption">{e.customerTaxId}</td>
-                          <td className="px-3 py-1.5 text-ink text-right">Bs. {e.subtotal.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-ink text-right">Bs. {e.taxTotal.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-ink text-right font-medium">Bs. {e.total.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-ink text-right">{currencySymbol} {e.subtotal.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-ink text-right">{currencySymbol} {e.taxTotal.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-ink text-right font-medium">{currencySymbol} {e.total.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>

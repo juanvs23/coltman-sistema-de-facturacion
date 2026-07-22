@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Sale } from '@shared/types'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface CancelSaleModalProps {
   sale: Sale
@@ -11,6 +12,7 @@ export default function CancelSaleModal({ sale, onConfirm, onCancel }: CancelSal
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const { currencySymbol } = useCountry()
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -34,7 +36,7 @@ export default function CancelSaleModal({ sale, onConfirm, onCancel }: CancelSal
         <h3 className="text-title-sm text-ink mb-1">Anular venta</h3>
         <p className="text-body-sm text-muted mb-4">
           {sale.documentType === 'FACTURA' ? 'Factura' : 'Ticket'} N° {String(sale.receiptNumber).padStart(4, '0')}
-          {' — '}Bs. {sale.total.toFixed(2)}
+          {' — '}{currencySymbol} {sale.total.toFixed(2)}
         </p>
 
         {error && (

@@ -97,10 +97,10 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.9.0)
+## Current State (v0.11.0)
 
 **Branch**: `dev`
-**Date**: 2026-07-19
+**Date**: 2026-07-21
 
 ### Fase 1 — COMPLETA
 - [x] 1.0 Core multi-país + plugin-ve 🇻🇪
@@ -198,6 +198,15 @@ Todos los módulos core del MVP están implementados. El sistema permite:
 - Configuración multi-país con plugin-ve y plugin-co
 - Empresa, usuarios, impuestos, tasa USD
 
+### Completed (v0.10.0 — Plugin Kernel Architecture)
+
+- [x] **SDD completo**: proposal, spec (4 dominios), design, tasks en openspec/ + Engram
+- [x] **PR 1 — Kernel**: AppKernel singleton, PluginRegistry, HookBus (actions+filters con prioridad), UiRegistry, DataModelRegistry — 52 tests nuevos
+- [x] **PR 2 — Wiring**: PluginLoader refactorizado, kernel en main.ts/handlers, VenezuelaPlugin migrado a plugin real en `plugins/plugin-ve/`
+- [x] **Core neutro**: sin defaults venezolanos hardcodeados, todo el país se resuelve vía `AppKernel.getCountryPlugin()`
+- [x] **PR 3 — UI Bridge**: PluginProvider, PluginSidebarItems, PluginSettingsTabs, useCountry hook, reemplazo de `Bs.`/`RIF`/`SENIAT` hardcodeados por datos dinámicos del country plugin
+- [x] **138 tests** pasando (24 files)
+
 ### Pending (Fase 2 — Cabos Sueltos)
 
 En orden de implementación:
@@ -207,3 +216,4 @@ En orden de implementación:
 - [x] **2.3 Multi-método de pago**: pago mixto real en una venta (schema + UI) ✅
 - [ ] **2.4 Documentación de usuario**: manual, guía de instalación, FAQ
 - [ ] **2.5 Build instaladores**: Windows (.exe), Linux (AppImage), Mac (.dmg)
+- [ ] **2.6 Fase 4 SDD — DataModelRegistry.migrate()**: migración de schemas parciales de plugins

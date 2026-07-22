@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { CompanyConfig } from '@shared/types'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 const emptyForm: CompanyConfig = {
   businessName: '',
@@ -11,6 +12,7 @@ const emptyForm: CompanyConfig = {
 }
 
 export default function CompanyTab(): JSX.Element {
+  const { taxIdLabel } = useCountry()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState<CompanyConfig>(emptyForm)
@@ -90,7 +92,7 @@ export default function CompanyTab(): JSX.Element {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-caption text-muted">RIF</label>
+            <label className="text-caption text-muted">{taxIdLabel}</label>
             <input value={form.taxId ?? ''} onChange={e => setForm(f => ({ ...f, taxId: e.target.value }))}
               placeholder="J-00000000-0"
               className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink
