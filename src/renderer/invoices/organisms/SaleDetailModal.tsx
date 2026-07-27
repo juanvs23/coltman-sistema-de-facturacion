@@ -16,7 +16,8 @@ const METHOD_LABELS: Record<string, string> = {
 export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId }: SaleDetailModalProps): JSX.Element {
   const date = new Date(sale.createdAt)
   const canCancel = sale.status === 'COMPLETED' && sale.userId === currentUserId && !!onCancel
-  const { currencySymbol } = useCountry()
+  const { currencySymbol, defaultExchangeRate } = useCountry()
+  const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -88,7 +89,7 @@ export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId
             <span className="text-ink">Total</span>
             <span className="text-ink">{currencySymbol} {sale.total.toFixed(2)}</span>
           </div>
-          {sale.usdRate && sale.usdRate > 0 && (
+          {isDualCurrency && sale.usdRate && sale.usdRate > 0 && (
             <div className="flex justify-between text-caption text-muted-soft">
               <span>Equiv. USD</span>
               <span>${(sale.total / sale.usdRate).toFixed(2)}</span>
@@ -113,10 +114,12 @@ export default function SaleDetailModal({ sale, onClose, onCancel, currentUserId
             <span className="text-muted">Vendedor</span>
             <span className="text-ink">{sale.user?.fullName ?? '—'}</span>
           </div>
-          <div className="flex justify-between text-caption">
-            <span className="text-muted">Tasa USD</span>
-            <span className="text-ink">{currencySymbol} {(sale.usdRate ?? 0).toFixed(2)}</span>
-          </div>
+          {isDualCurrency && (
+            <div className="flex justify-between text-caption">
+              <span className="text-muted">Tasa USD</span>
+              <span className="text-ink">{currencySymbol} {(sale.usdRate ?? 0).toFixed(2)}</span>
+            </div>
+          )}
           {sale.notes && (
             <div className="flex justify-between text-caption">
               <span className="text-muted">Notas</span>

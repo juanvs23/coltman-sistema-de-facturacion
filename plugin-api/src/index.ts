@@ -79,7 +79,8 @@ export type {
   ICountryPlugin,
   TaxIdValidation,
   PaymentMethod as CountryPaymentMethod,
-  DefaultTax
+  DefaultTax,
+  FiscalAuthorityConfig
 } from './contracts/ICountryPlugin'
 
 // ─── License ──────────────────────────────────────────────────

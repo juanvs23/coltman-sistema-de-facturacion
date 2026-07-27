@@ -29,8 +29,8 @@ interface ElectronAPI {
   listCustomers: () => Promise<IpcResponse<import('@shared/types').Customer[]>>
   searchCustomers: (query: string) => Promise<IpcResponse<import('@shared/types').Customer[]>>
   findCustomerByTaxId: (taxId: string) => Promise<IpcResponse<import('@shared/types').Customer | null>>
-  createCustomer: (input: { taxId: string; name: string; address?: string; phone?: string; email?: string }) => Promise<IpcResponse<import('@shared/types').Customer>>
-  updateCustomer: (id: string, input: { name?: string; address?: string; phone?: string; email?: string; active?: boolean }) => Promise<IpcResponse<import('@shared/types').Customer>>
+  createCustomer: (input: { taxId: string; name: string; personType?: string; personSubtype?: string; legalType?: string; address?: string; phone?: string; email?: string }) => Promise<IpcResponse<import('@shared/types').Customer>>
+  updateCustomer: (id: string, input: { name?: string; personType?: string; personSubtype?: string; legalType?: string; address?: string; phone?: string; email?: string; active?: boolean }) => Promise<IpcResponse<import('@shared/types').Customer>>
   deleteCustomer: (id: string) => Promise<IpcResponse>
 
   // Sales
@@ -49,9 +49,16 @@ interface ElectronAPI {
   getNextReceiptNumber: () => Promise<IpcResponse<number>>
 
   // Cash Register
-  openRegister: (balance: number) => Promise<IpcResponse>
-  closeRegister: (registerId: string, closingBalance: number, userId: string) => Promise<IpcResponse>
-  getCashSummary: () => Promise<IpcResponse<{ register: unknown; sales: unknown[] }>>
+  getActiveCashRegister: () => Promise<IpcResponse<{
+    id: string
+    openingBalance: number
+    openedAt: string
+    shiftConfig?: { id: string; name: string; startTime: string; endTime: string } | null
+    openedBy?: { fullName: string } | null
+  } | null>>
+  openRegister: (data: { balance: number; shiftConfigId?: string; date: string; time: string }) => Promise<IpcResponse>
+  closeRegister: (data: { registerId: string; closingBalance: number; date: string; time: string; userId: string }) => Promise<IpcResponse>
+  getCashSummary: (options?: { date?: string }) => Promise<IpcResponse<{ registers: unknown[]; sales: unknown[] }>>
   addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => Promise<IpcResponse>
 
   // Reports
@@ -97,6 +104,18 @@ interface ElectronAPI {
   listPlugins: () => Promise<IpcResponse<Array<{ id: string; name: string; version: string; description?: string; enabled: boolean; visibility?: string; target?: string; hooks?: string[] }>>>
   installPlugin: (source: string) => Promise<IpcResponse>
   togglePluginActive: (id: string) => Promise<IpcResponse<{ active: boolean }>>
+
+  // Shift Config
+  listShiftConfigs: () => Promise<IpcResponse<import('@shared/types').ShiftConfigData[]>>
+  saveShiftConfig: (data: { id?: string; name: string; days: number[]; startTime: string; endTime: string; order?: number; active?: boolean }) => Promise<IpcResponse<import('@shared/types').ShiftConfigData>>
+  deleteShiftConfig: (id: string) => Promise<IpcResponse>
+
+  // Quotations
+  createQuotation: (data: import('@shared/types').CreateQuotationRequest) => Promise<IpcResponse<import('@shared/types').QuotationData>>
+  listQuotations: (filters?: import('@shared/types').QuotationFilters) => Promise<IpcResponse<import('@shared/types').QuotationData[]>>
+  getQuotation: (id: string) => Promise<IpcResponse<import('@shared/types').QuotationData>>
+  convertQuotationToSale: (id: string) => Promise<IpcResponse<import('@shared/types').Sale>>
+  cancelQuotation: (id: string) => Promise<IpcResponse<import('@shared/types').QuotationData>>
 
   // Kernel / Country Plugin
   getCountryPlugin: () => Promise<IpcResponse<CountryPluginData | null>>

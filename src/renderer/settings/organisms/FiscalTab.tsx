@@ -17,8 +17,7 @@ const PRINTER_TYPES = [
 ]
 
 export default function FiscalTab(): JSX.Element {
-  const { countryCode } = useCountry()
-  const isVenezuela = countryCode === 'VE'
+  const country = useCountry()
   const [config, setConfig] = useState<FiscalConfigData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -128,19 +127,18 @@ export default function FiscalTab(): JSX.Element {
         </div>
       </section>
 
-      {/* SENIAT — Solo visible para Venezuela */}
-      {isVenezuela && (
+      {country.fiscalAuthority && (
         <section>
-          <h3 className="text-title-sm text-ink mb-1">SENIAT</h3>
+          <h3 className="text-title-sm text-ink mb-1">{country.fiscalAuthority.name}</h3>
           <p className="text-body-sm text-muted">
-            Configuracion para facturacion electronica ante el SENIAT.
+            {country.fiscalAuthority.description}
           </p>
 
           <div className="mt-4 rounded-lg border border-hairline bg-canvas p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-body-sm font-medium text-ink">Facturacion electronica SENIAT</label>
-                <p className="text-caption text-muted-soft">Habilita el envio automatico de facturas al SENIAT</p>
+                <label className="text-body-sm font-medium text-ink">{country.fiscalAuthority.electronicInvoiceLabel}</label>
+                <p className="text-caption text-muted-soft">{country.fiscalAuthority.electronicInvoiceDescription}</p>
               </div>
               <button
                 type="button"
@@ -156,8 +154,8 @@ export default function FiscalTab(): JSX.Element {
             {form.seniatEnabled && (
               <div className="flex items-center justify-between pl-4 border-l-2 border-hairline">
                 <div>
-                  <label className="text-body-sm font-medium text-ink">Envio automatico</label>
-                  <p className="text-caption text-muted-soft">Envia facturas automaticamente al generarlas</p>
+                  <label className="text-body-sm font-medium text-ink">{country.fiscalAuthority.autoSendLabel}</label>
+                  <p className="text-caption text-muted-soft">{country.fiscalAuthority.autoSendDescription}</p>
                 </div>
                 <button
                   type="button"

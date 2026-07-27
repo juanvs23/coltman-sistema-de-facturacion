@@ -4,6 +4,7 @@ import InvoicesPage from '../../invoices/pages/InvoicesPage'
 import CashRegisterPage from '../../cash-register/pages/CashRegisterPage'
 import ReportsPage from '../../reports/pages/ReportsPage'
 import SettingsPage from '../../settings/pages/SettingsPage'
+import QuotationsPage from '../../presupuestos/pages/QuotationsPage'
 
 interface ContentAreaProps {
   activeView: ViewId
@@ -21,6 +22,8 @@ export default function ContentArea({ activeView }: ContentAreaProps): JSX.Eleme
       return <ReportsPage />
     case 'settings':
       return <SettingsPage />
+    case 'quotations':
+      return <QuotationsPage />
     default:
       return (
         <section className="flex flex-1 items-center justify-center bg-surface-soft/50 p-6">

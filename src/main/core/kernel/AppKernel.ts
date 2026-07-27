@@ -177,6 +177,19 @@ export class AppKernel implements IPluginKernel {
   }
 
   /**
+   * Unregister a country plugin, cleaning up both maps.
+   * Called by PluginLoader when a plugin is deactivated.
+   */
+  unregisterCountryPlugin(pluginId: string): void {
+    for (const [code, id] of this._countryPluginMap) {
+      if (id === pluginId) {
+        this._countryPluginMap.delete(code)
+      }
+    }
+    this._countryPluginInstances.delete(pluginId)
+  }
+
+  /**
    * Get the active country plugin based on AppConfig.country.
    * Returns null if:
    * - The kernel is not initialized
@@ -194,8 +207,8 @@ export class AppKernel implements IPluginKernel {
         where: { id: 'default' }
       })
 
-      const countryCode = config?.country ?? 'VE'
-      const pluginId = this._countryPluginMap.get(countryCode)
+      if (!config?.country) return null
+      const pluginId = this._countryPluginMap.get(config.country)
 
       if (!pluginId) return null
       return this._countryPluginInstances.get(pluginId) ?? null

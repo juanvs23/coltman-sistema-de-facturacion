@@ -41,9 +41,10 @@ const electronAPI = {
   getNextReceiptNumber: () => ipcRenderer.invoke('sales:next-receipt-number'),
 
   // Cash Register
-  openRegister: (balance: number) => ipcRenderer.invoke('cash:open', balance),
-  closeRegister: (registerId: string, closingBalance: number, userId: string) => ipcRenderer.invoke('cash:close', registerId, closingBalance, userId),
-  getCashSummary: () => ipcRenderer.invoke('cash:summary'),
+  getActiveCashRegister: () => ipcRenderer.invoke('cashRegister:getActive'),
+  openRegister: (data: { balance: number; shiftConfigId?: string; date: string; time: string }) => ipcRenderer.invoke('cash:open', data),
+  closeRegister: (data: { registerId: string; closingBalance: number; date: string; time: string; userId: string }) => ipcRenderer.invoke('cash:close', data),
+  getCashSummary: (options?: { date?: string }) => ipcRenderer.invoke('cash:summary', options),
   addCashMovement: (data: { registerId: string; type: string; amount: number; description?: string; userId: string }) => ipcRenderer.invoke('cash:add-movement', data),
 
   // USD Rate
@@ -91,6 +92,18 @@ const electronAPI = {
   listPlugins: () => ipcRenderer.invoke('plugins:list'),
   installPlugin: (source: string) => ipcRenderer.invoke('plugins:install', source),
   togglePluginActive: (id: string) => ipcRenderer.invoke('plugins:toggle-active', id),
+
+  // Shift Config
+  listShiftConfigs: () => ipcRenderer.invoke('shift-config:list'),
+  saveShiftConfig: (data: unknown) => ipcRenderer.invoke('shift-config:save', data),
+  deleteShiftConfig: (id: string) => ipcRenderer.invoke('shift-config:delete', id),
+
+  // Quotations
+  createQuotation: (data: unknown) => ipcRenderer.invoke('quotation:create', data),
+  listQuotations: (filters?: unknown) => ipcRenderer.invoke('quotation:list', filters),
+  getQuotation: (id: string) => ipcRenderer.invoke('quotation:get', id),
+  convertQuotationToSale: (id: string) => ipcRenderer.invoke('quotation:convert-to-sale', id),
+  cancelQuotation: (id: string) => ipcRenderer.invoke('quotation:cancel', id),
 
   // Kernel / Country Plugin
   getCountryPlugin: () => ipcRenderer.invoke('kernel:get-country-plugin'),

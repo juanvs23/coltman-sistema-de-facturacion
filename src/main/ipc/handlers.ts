@@ -12,6 +12,13 @@ import type { UiRegistryState } from '@shared/types'
 import { guard, AuthError, validatePassword, invalidatePermissionCache } from './guards'
 import { sessionManager } from './SessionManager'
 
+/** Extrae el mensaje real del error o usa el fallback si no es un Error */
+function fmtErr(error: unknown, fallback: string): string {
+  if (error instanceof AuthError) return error.message
+  if (error instanceof Error) return error.message
+  return fallback
+}
+
 export function validateSaleInput(input: {
   documentType: string
   customerId?: string
@@ -107,7 +114,7 @@ export function registerIpcHandlers(deps: {
       })
       return { success: true, data: session }
     } catch (error) {
-      return { success: false, error: 'Error al desbloquear sesión' }
+      return { success: false, error: fmtErr(error, 'Error al desbloquear sesión') }
     }
   })
 
@@ -122,7 +129,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: products }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al listar productos' }
+        return { success: false, error: fmtErr(error, 'Error al listar productos') }
       }
     })
 
@@ -133,7 +140,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: products }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al buscar productos' }
+        return { success: false, error: fmtErr(error, 'Error al buscar productos') }
       }
     })
 
@@ -147,7 +154,7 @@ export function registerIpcHandlers(deps: {
         if (error instanceof Error && error.message.includes('Unique constraint')) {
           return { success: false, error: 'El código de producto ya existe' }
         }
-        return { success: false, error: 'Error al crear producto' }
+        return { success: false, error: fmtErr(error, 'Error al crear producto') }
       }
     })
 
@@ -158,7 +165,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: product }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al actualizar producto' }
+        return { success: false, error: fmtErr(error, 'Error al actualizar producto') }
       }
     })
 
@@ -169,7 +176,7 @@ export function registerIpcHandlers(deps: {
         return { success: true }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al eliminar producto' }
+        return { success: false, error: fmtErr(error, 'Error al eliminar producto') }
       }
     })
 
@@ -180,7 +187,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: categories }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al listar categorías' }
+        return { success: false, error: fmtErr(error, 'Error al listar categorías') }
       }
     })
 
@@ -194,7 +201,7 @@ export function registerIpcHandlers(deps: {
         if (error instanceof Error && error.message.includes('Unique constraint')) {
           return { success: false, error: 'La categoría ya existe' }
         }
-        return { success: false, error: 'Error al crear categoría' }
+        return { success: false, error: fmtErr(error, 'Error al crear categoría') }
       }
     })
 
@@ -205,7 +212,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: category }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al actualizar categoría' }
+        return { success: false, error: fmtErr(error, 'Error al actualizar categoría') }
       }
     })
 
@@ -216,7 +223,7 @@ export function registerIpcHandlers(deps: {
         return { success: true }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al eliminar categoría' }
+        return { success: false, error: fmtErr(error, 'Error al eliminar categoría') }
       }
     })
 
@@ -228,7 +235,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: taxes }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al listar impuestos' }
+        return { success: false, error: fmtErr(error, 'Error al listar impuestos') }
       }
     })
 
@@ -242,7 +249,7 @@ export function registerIpcHandlers(deps: {
         if (error instanceof Error && error.message.includes('Unique constraint')) {
           return { success: false, error: 'El impuesto ya existe' }
         }
-        return { success: false, error: 'Error al crear impuesto' }
+        return { success: false, error: fmtErr(error, 'Error al crear impuesto') }
       }
     })
 
@@ -253,7 +260,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: tax }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al actualizar impuesto' }
+        return { success: false, error: fmtErr(error, 'Error al actualizar impuesto') }
       }
     })
   }
@@ -269,7 +276,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: customers }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al listar clientes' }
+        return { success: false, error: fmtErr(error, 'Error al listar clientes') }
       }
     })
 
@@ -280,7 +287,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: customers }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al buscar clientes' }
+        return { success: false, error: fmtErr(error, 'Error al buscar clientes') }
       }
     })
 
@@ -291,7 +298,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: customer }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al buscar cliente' }
+        return { success: false, error: fmtErr(error, 'Error al buscar cliente') }
       }
     })
 
@@ -305,7 +312,7 @@ export function registerIpcHandlers(deps: {
         if (error instanceof Error && error.message.includes('Unique constraint')) {
           return { success: false, error: 'El RIF ya existe' }
         }
-        return { success: false, error: 'Error al crear cliente' }
+        return { success: false, error: fmtErr(error, 'Error al crear cliente') }
       }
     })
 
@@ -316,7 +323,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: customer }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al actualizar cliente' }
+        return { success: false, error: fmtErr(error, 'Error al actualizar cliente') }
       }
     })
 
@@ -327,7 +334,7 @@ export function registerIpcHandlers(deps: {
         return { success: true }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al eliminar cliente' }
+        return { success: false, error: fmtErr(error, 'Error al eliminar cliente') }
       }
     })
   }
@@ -342,10 +349,22 @@ export function registerIpcHandlers(deps: {
     notes?: string
     userId: string
     customerId?: string
+    motivo?: string
+    customerNotes?: string
   }) => {
     try {
       const session = await guard(event, 'sales:create')
       const userId = session.userId
+
+      // Obtener el turno de caja activo
+      const activeRegister = await prisma.cashRegister.findFirst({
+        where: { closingBalance: null },
+        orderBy: { openedAt: 'desc' }
+      })
+      if (!activeRegister) {
+        return { success: false, error: 'CASH_REGISTER_REQUIRED' }
+      }
+      const cashRegisterId = activeRegister.id
 
       // Validate customer required for FACTURA
       const validation = validateSaleInput({ documentType: input.documentType, customerId: input.customerId })
@@ -455,6 +474,7 @@ export function registerIpcHandlers(deps: {
             notes: input.notes ?? null,
             userId,
             customerId: input.customerId ?? null,
+            cashRegisterId,
             items: {
               create: saleItemsData
             },
@@ -483,11 +503,119 @@ export function registerIpcHandlers(deps: {
         return created
       })
 
+      // ── Generate InvoiceDocument (snapshot) ────────────────
+      try {
+        const plugin = await deps.kernel.getCountryPlugin()
+        const appConfig = await prisma.appConfig.findUnique({ where: { id: 'default' } })
+        const company = await prisma.companyConfig.findUnique({ where: { id: 'default' } })
+        const openRegister = await prisma.cashRegister.findFirst({
+          where: { closingBalance: null },
+          include: { shiftConfig: true }
+        })
+        const user = await prisma.user.findUnique({ where: { id: userId } })
+
+        const itemsSnapshot = sale.items.map(i => ({
+          productId: i.productId,
+          code: i.product?.code,
+          name: i.product?.name,
+          quantity: i.quantity,
+          priceUsd: i.priceUsd,
+          priceLocal: i.price,
+          discount: i.discount,
+          subtotal: i.subtotal,
+          taxRate: i.taxRate,
+          taxAmount: i.taxAmount,
+          total: i.total
+        }))
+
+        const paymentsSnapshot = sale.payments.map(p => ({
+          method: p.method,
+          amountBs: p.amountBs,
+          reference: p.reference
+        }))
+
+        const taxBreakdown = sale.items.reduce((acc: Array<Record<string, unknown>>, i) => {
+          if (i.taxBreakdown) {
+            try {
+              const parsed = JSON.parse(i.taxBreakdown) as Array<Record<string, unknown>>
+              parsed.forEach(t => {
+                const existing = acc.find(e => e.rate === t.rate && e.name === t.name)
+                if (existing) existing.amount = (existing.amount as number) + (t.amount as number)
+                else acc.push({ name: t.name, rate: t.rate, amount: t.amount })
+              })
+            } catch { /* skip invalid JSON */ }
+          }
+          return acc
+        }, [])
+
+        const customer = sale.customerId
+          ? await prisma.customer.findUnique({ where: { id: sale.customerId } })
+          : null
+
+        await prisma.invoiceDocument.create({
+          data: {
+            saleId: sale.id,
+            documentType: sale.documentType,
+            receiptNumber: sale.receiptNumber,
+            series: plugin && 'getInvoiceNumberFormat' in plugin
+              ? (plugin as { getInvoiceNumberFormat?: () => { prefix: string } }).getInvoiceNumberFormat?.().prefix ?? null
+              : null,
+            issuedAt: sale.createdAt,
+            dueDate: null,
+            posCode: openRegister?.id ?? null,
+            branchCode: null,
+            terminalId: null,
+            shiftId: openRegister?.id ?? null,
+            shiftName: openRegister?.shiftConfig?.name ?? null,
+            sellerId: userId,
+            sellerName: user?.fullName ?? null,
+            orderRef: null,
+            customerName: customer?.name ?? null,
+            customerTaxId: customer?.taxId ?? null,
+            customerPersonType: customer?.personType ?? null,
+            customerPersonSubtype: customer?.personSubtype ?? null,
+            customerAddress: customer?.address ?? null,
+            customerPhone: customer?.phone ?? null,
+            customerEmail: customer?.email ?? null,
+            currencyCode: plugin?.currencyCode ?? 'VES',
+            currencySymbol: plugin?.currencySymbol ?? 'Bs.',
+            exchangeRate: rate,
+            exchangeSource: appConfig?.usdRateSource ?? 'manual',
+            subtotal: sale.subtotal,
+            discount: sale.discount,
+            taxTotal: sale.taxTotal,
+            total: sale.total,
+            totalUsd: parseFloat((sale.total / rate).toFixed(2)),
+            taxBreakdown: JSON.stringify(taxBreakdown),
+            itemsSnapshot: JSON.stringify(itemsSnapshot),
+            paymentsSnapshot: JSON.stringify(paymentsSnapshot),
+            motivo: input.motivo ?? null,
+            notes: sale.notes,
+            customerNotes: input.customerNotes ?? null,
+            pluginId: plugin?.constructor.name ?? null,
+            pluginSnapshot: plugin ? JSON.stringify({
+              countryCode: plugin.countryCode,
+              taxIdLabel: plugin.taxIdLabel,
+              currencySymbol: plugin.currencySymbol,
+              currencyCode: plugin.currencyCode
+            }) : null,
+            pdfPath: null,
+            xmlContent: null,
+            externalStatus: null,
+            externalId: null,
+            createdById: userId
+          }
+        })
+      } catch (docError) {
+        console.error('Failed to create InvoiceDocument:', docError)
+        // Don't fail the sale if document creation fails
+      }
+
       return { success: true, data: sale }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
       console.error('sales:create error:', error)
-      return { success: false, error: 'Error al crear la venta' }
+      return { success: false, error: fmtErr(error, 'Error al crear la venta') }
     }
   })
 
@@ -501,7 +629,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: sales }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al listar ventas' }
+      return { success: false, error: fmtErr(error, 'Error al listar ventas') }
     }
   })
 
@@ -529,25 +657,52 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: nextNumber }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener número de factura' }
+      return { success: false, error: fmtErr(error, 'Error al obtener número de factura') }
     }
   })
 
   // ─── Cash Register ───────────────────────────────────────
-  ipcMain.handle('cash:open', async (event, balance: number) => {
+  ipcMain.handle('cashRegister:getActive', async () => {
     try {
-      await guard(event, 'cash:open')
+      const register = await prisma.cashRegister.findFirst({
+        where: { closingBalance: null },
+        orderBy: { openedAt: 'desc' },
+        include: {
+          shiftConfig: true,
+          openedBy: { select: { fullName: true } }
+        }
+      })
+      return { success: true, data: register }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al obtener caja activa') }
+    }
+  })
+
+  ipcMain.handle('cash:open', async (event, data: { balance: number; shiftConfigId?: string; date: string; time: string }) => {
+    try {
+      const session = await guard(event, 'cash:open')
+      // Solo una caja abierta a la vez por máquina
+      const existing = await prisma.cashRegister.findFirst({
+        where: { closingBalance: null }
+      })
+      if (existing) {
+        return { success: false, error: 'Ya hay una caja abierta. Ciérrela antes de abrir un nuevo turno.' }
+      }
+      const [y, m, d] = data.date.split('-').map(Number)
+      const [hh, mm] = data.time.split(':').map(Number)
+      const openedAt = new Date(y, m - 1, d, hh, mm)
       const register = await prisma.cashRegister.create({
         data: {
-          openingBalance: balance,
-          date: new Date(),
+          openingBalance: data.balance,
+          openedAt,
+          openedById: session.userId,
+          shiftConfigId: data.shiftConfigId ?? null,
           movements: {
             create: {
               type: 'OPENING',
-              amount: balance,
+              amount: data.balance,
               description: 'Apertura de caja',
-              userId: '',
-              registerId: ''
+              userId: session.userId
             }
           }
         }
@@ -555,29 +710,32 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: register }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al abrir caja' }
+      return { success: false, error: fmtErr(error, 'Error al abrir caja') }
     }
   })
 
-  ipcMain.handle('cash:close', async (event, registerId: string, closingBalance: number, userId: string) => {
+  ipcMain.handle('cash:close', async (event, data: { registerId: string; closingBalance: number; date: string; time: string; userId: string }) => {
     try {
       await guard(event, 'cash:close')
+      const [y, m, d] = data.date.split('-').map(Number)
+      const [hh, mm] = data.time.split(':').map(Number)
+      const closedAt = new Date(y, m - 1, d, hh, mm)
       const register = await prisma.$transaction(async (tx) => {
         await tx.cashMovement.create({
           data: {
             type: 'CLOSING',
-            amount: closingBalance,
+            amount: data.closingBalance,
             description: 'Cierre de caja',
-            userId,
-            registerId
+            userId: data.userId,
+            registerId: data.registerId
           }
         })
         return tx.cashRegister.update({
-          where: { id: registerId },
+          where: { id: data.registerId },
           data: {
-            closingBalance,
-            closedAt: new Date(),
-            closedById: userId
+            closingBalance: data.closingBalance,
+            closedAt,
+            closedById: data.userId
           },
           include: { movements: true }
         })
@@ -585,32 +743,39 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: register }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al cerrar caja' }
+      return { success: false, error: fmtErr(error, 'Error al cerrar caja') }
     }
   })
 
-  ipcMain.handle('cash:summary', async (event) => {
+  ipcMain.handle('cash:summary', async (event, options?: { date?: string }) => {
     try {
       await guard(event, 'cash:summary')
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const register = await prisma.cashRegister.findFirst({
-        where: { date: { gte: today } },
+      const now = new Date()
+      const targetDate = options?.date
+        ? new Date(Number(options.date.split('-')[0]), Number(options.date.split('-')[1]) - 1, Number(options.date.split('-')[2]))
+        : new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const nextDay = new Date(targetDate)
+      nextDay.setDate(nextDay.getDate() + 1)
+
+      const registers = await prisma.cashRegister.findMany({
+        where: { openedAt: { gte: targetDate, lt: nextDay } },
         include: {
           movements: { include: { user: { select: { fullName: true } } } },
-          closedBy: { select: { fullName: true } }
+          openedBy: { select: { fullName: true } },
+          closedBy: { select: { fullName: true } },
+          shiftConfig: true
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { openedAt: 'asc' }
       })
-      // Also get today's sales with payment entries
+      // Also get sales for that day with payment entries
       const sales = await prisma.sale.findMany({
-        where: { createdAt: { gte: today }, status: 'COMPLETED' },
+        where: { createdAt: { gte: targetDate, lt: nextDay }, status: 'COMPLETED' },
         include: { payments: true }
       })
-      return { success: true, data: { register, sales } }
+      return { success: true, data: { registers, sales } }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener resumen' }
+      return { success: false, error: fmtErr(error, 'Error al obtener resumen') }
     }
   })
 
@@ -631,7 +796,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: movement }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al registrar movimiento' }
+      return { success: false, error: fmtErr(error, 'Error al registrar movimiento') }
     }
   })
 
@@ -650,7 +815,7 @@ export function registerIpcHandlers(deps: {
       }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener tasa USD' }
+      return { success: false, error: fmtErr(error, 'Error al obtener tasa USD') }
     }
   })
 
@@ -675,7 +840,7 @@ export function registerIpcHandlers(deps: {
       }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener historial de tasas' }
+      return { success: false, error: fmtErr(error, 'Error al obtener historial de tasas') }
     }
   })
 
@@ -687,7 +852,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener configuración' }
+      return { success: false, error: fmtErr(error, 'Error al obtener configuración') }
     }
   })
 
@@ -714,7 +879,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al actualizar configuración' }
+      return { success: false, error: fmtErr(error, 'Error al actualizar configuración') }
     }
   })
 
@@ -731,7 +896,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener datos de la empresa' }
+      return { success: false, error: fmtErr(error, 'Error al obtener datos de la empresa') }
     }
   })
 
@@ -746,7 +911,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al actualizar datos de la empresa' }
+      return { success: false, error: fmtErr(error, 'Error al actualizar datos de la empresa') }
     }
   })
 
@@ -776,7 +941,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: { date: d.toISOString(), sales: sales.length, total, byMethod } }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al generar reporte diario' }
+      return { success: false, error: fmtErr(error, 'Error al generar reporte diario') }
     }
   })
 
@@ -803,7 +968,7 @@ export function registerIpcHandlers(deps: {
       }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al generar reporte por producto' }
+      return { success: false, error: fmtErr(error, 'Error al generar reporte por producto') }
     }
   })
 
@@ -829,7 +994,7 @@ export function registerIpcHandlers(deps: {
       }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al generar reporte por usuario' }
+      return { success: false, error: fmtErr(error, 'Error al generar reporte por usuario') }
     }
   })
 
@@ -867,7 +1032,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: { period: yearMonth ?? `${y}-${String(m).padStart(2, '0')}`, entries, totals } }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al generar libro IVA' }
+      return { success: false, error: fmtErr(error, 'Error al generar libro IVA') }
     }
   })
 
@@ -905,7 +1070,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener configuracion fiscal' }
+      return { success: false, error: fmtErr(error, 'Error al obtener configuracion fiscal') }
     }
   })
 
@@ -920,7 +1085,8 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: config }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al actualizar configuracion fiscal' }
+      console.error('fiscal:update error:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Error al actualizar configuracion fiscal' }
     }
   })
 
@@ -937,7 +1103,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: state }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al obtener estado UI' }
+      return { success: false, error: fmtErr(error, 'Error al obtener estado UI') }
     }
   })
 
@@ -958,7 +1124,9 @@ export function registerIpcHandlers(deps: {
           taxIdLabel: plugin.taxIdLabel,
           paymentMethods: plugin.getPaymentMethods(),
           defaultTaxes: plugin.getDefaultTaxes(),
-          defaultExchangeRate: plugin.getDefaultExchangeRate()
+          defaultExchangeRate: plugin.getDefaultExchangeRate(),
+          fiscalAuthority: plugin.getFiscalAuthorityConfig?.() ?? undefined,
+          personTypes: plugin.getPersonTypes?.() ?? undefined
         }
       }
     } catch (error) {
@@ -1003,7 +1171,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: state }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al suscribirse a UI registry' }
+      return { success: false, error: fmtErr(error, 'Error al suscribirse a UI registry') }
     }
   })
 
@@ -1018,7 +1186,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: users }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al listar usuarios' }
+        return { success: false, error: fmtErr(error, 'Error al listar usuarios') }
       }
     })
 
@@ -1039,7 +1207,7 @@ export function registerIpcHandlers(deps: {
         if (error instanceof Error && error.message.includes('Unique constraint')) {
           return { success: false, error: 'El nombre de usuario ya existe' }
         }
-        return { success: false, error: 'Error al crear usuario' }
+        return { success: false, error: fmtErr(error, 'Error al crear usuario') }
       }
     })
 
@@ -1058,7 +1226,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: user }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al actualizar usuario' }
+        return { success: false, error: fmtErr(error, 'Error al actualizar usuario') }
       }
     })
 
@@ -1069,7 +1237,7 @@ export function registerIpcHandlers(deps: {
         return { success: true, data: user }
       } catch (error) {
         if (error instanceof AuthError) return { success: false, error: error.message }
-        return { success: false, error: 'Error al cambiar estado del usuario' }
+        return { success: false, error: fmtErr(error, 'Error al cambiar estado del usuario') }
       }
     })
   }
@@ -1082,7 +1250,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data: plugins }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al listar plugins' }
+      return { success: false, error: fmtErr(error, 'Error al listar plugins') }
     }
   })
 
@@ -1093,7 +1261,7 @@ export function registerIpcHandlers(deps: {
       return result
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al instalar plugin' }
+      return { success: false, error: fmtErr(error, 'Error al instalar plugin') }
     }
   })
 
@@ -1104,7 +1272,7 @@ export function registerIpcHandlers(deps: {
       return result
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al cambiar estado del plugin' }
+      return { success: false, error: fmtErr(error, 'Error al cambiar estado del plugin') }
     }
   })
 
@@ -1131,7 +1299,7 @@ export function registerIpcHandlers(deps: {
       return { success: true, data }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al listar roles' }
+      return { success: false, error: fmtErr(error, 'Error al listar roles') }
     }
   })
 
@@ -1173,7 +1341,7 @@ export function registerIpcHandlers(deps: {
       }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al crear rol' }
+      return { success: false, error: fmtErr(error, 'Error al crear rol') }
     }
   })
 
@@ -1225,7 +1393,7 @@ export function registerIpcHandlers(deps: {
       }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al actualizar rol' }
+      return { success: false, error: fmtErr(error, 'Error al actualizar rol') }
     }
   })
 
@@ -1245,7 +1413,7 @@ export function registerIpcHandlers(deps: {
       return { success: true }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al eliminar rol' }
+      return { success: false, error: fmtErr(error, 'Error al eliminar rol') }
     }
   })
 
@@ -1262,7 +1430,344 @@ export function registerIpcHandlers(deps: {
       })) }
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Error al listar permisos' }
+      return { success: false, error: fmtErr(error, 'Error al listar permisos') }
     }
   })
+
+  // ─── Quotation IPC — Presupuestos ──────────────────────────
+
+  ipcMain.handle('quotation:create', async (_event, input: {
+    items: Array<{ productId: string; quantity: number; priceUsd: number; discount?: number }>
+    discount?: number
+    usdRate?: number
+    notes?: string
+    userId: string
+    customerId?: string
+  }) => {
+    try {
+      if (!input.userId) throw new AuthError('Usuario requerido')
+      if (!input.items?.length) return { success: false, error: 'Debe agregar al menos un producto' }
+
+      // Get last quotation number
+      const lastQuotation = await prisma.quotation.findFirst({
+        orderBy: { number: 'desc' }
+      })
+      const nextNumber = (lastQuotation?.number ?? 0) + 1
+
+      // Get validity days from config
+      const config = await prisma.appConfig.findUnique({ where: { id: 'default' } })
+      const validityDays = config?.quotationValidityDays ?? 30
+
+      const validUntil = new Date()
+      validUntil.setDate(validUntil.getDate() + validityDays)
+
+      const usdRate = input.usdRate ?? (
+        await prisma.appConfig.findUnique({ where: { id: 'default' } })
+      )?.usdRate ?? 1
+
+      // Calculate totals (same logic as sales:create)
+      let subtotalUsd = 0
+      let taxTotalUsd = 0
+      let totalUsd = 0
+
+      const itemsData = []
+      for (const item of input.items) {
+        const product = await prisma.product.findUnique({ where: { id: item.productId } })
+        if (!product) return { success: false, error: `Producto ${item.productId} no encontrado` }
+
+        const priceUsd = item.priceUsd
+        const lineDiscount = item.discount ?? 0
+        const lineSubtotal = item.quantity * priceUsd - lineDiscount
+
+        // Get applicable taxes
+        const productTaxes = await prisma.productTax.findMany({
+          where: { productId: item.productId },
+          include: { tax: true }
+        })
+
+        const totalRate = productTaxes.reduce((sum, pt) => sum + pt.tax.rate, 0)
+        const lineTax = lineSubtotal * (totalRate / 100)
+        const lineTotal = lineSubtotal + lineTax
+
+        subtotalUsd += lineSubtotal
+        taxTotalUsd += lineTax
+        totalUsd += lineTotal
+
+        const taxBreakdown = productTaxes.map(pt => ({
+          name: pt.tax.name,
+          rate: pt.tax.rate,
+          amount: lineSubtotal * (pt.tax.rate / 100)
+        }))
+
+        itemsData.push({
+          quantity: item.quantity,
+          priceUsd,
+          discount: lineDiscount,
+          subtotal: lineSubtotal,
+          taxRate: totalRate,
+          taxAmount: lineTax,
+          taxBreakdown: JSON.stringify(taxBreakdown),
+          total: lineTotal,
+          productId: item.productId
+        })
+      }
+
+      const globalDiscount = input.discount ?? 0
+      const grandTotal = (totalUsd - globalDiscount) > 0 ? (totalUsd - globalDiscount) : 0
+
+      const quotation = await prisma.quotation.create({
+        data: {
+          number: nextNumber,
+          status: 'DRAFT',
+          validUntil,
+          subtotal: subtotalUsd,
+          taxTotal: taxTotalUsd,
+          discount: globalDiscount,
+          total: grandTotal,
+          usdRate,
+          notes: input.notes,
+          userId: input.userId,
+          customerId: input.customerId || null,
+          items: {
+            create: itemsData
+          }
+        },
+        include: {
+          items: { include: { product: true } },
+          user: true,
+          customer: true
+        }
+      })
+
+      return { success: true, data: formatQuotation(quotation) }
+    } catch (error) {
+      return { success: false, error: error instanceof AuthError ? error.message : 'Error al crear presupuesto' }
+    }
+  })
+
+  ipcMain.handle('quotation:list', async (_event, filters?: {
+    from?: string
+    to?: string
+    status?: string
+    customerId?: string
+    limit?: number
+  }) => {
+    try {
+      const where: Record<string, unknown> = {}
+
+      if (filters?.status) where.status = filters.status
+      if (filters?.customerId) where.customerId = filters.customerId
+      if (filters?.from || filters?.to) {
+        where.createdAt = {}
+        if (filters.from) where.createdAt.gte = new Date(filters.from)
+        if (filters.to) where.createdAt.lte = new Date(filters.to)
+      }
+
+      const quotations = await prisma.quotation.findMany({
+        where: where as never,
+        orderBy: { createdAt: 'desc' },
+        take: filters?.limit ?? 100,
+        include: {
+          items: { include: { product: true } },
+          user: true,
+          customer: true
+        }
+      })
+
+      return { success: true, data: quotations.map(formatQuotation) }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al listar presupuestos') }
+    }
+  })
+
+  ipcMain.handle('quotation:get', async (_event, id: string) => {
+    try {
+      const quotation = await prisma.quotation.findUnique({
+        where: { id },
+        include: {
+          items: { include: { product: true } },
+          user: true,
+          customer: true
+        }
+      })
+
+      if (!quotation) return { success: false, error: 'Presupuesto no encontrado' }
+
+      return { success: true, data: formatQuotation(quotation) }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al obtener presupuesto') }
+    }
+  })
+
+  ipcMain.handle('quotation:convert-to-sale', async (_event, id: string) => {
+    try {
+      const quotation = await prisma.quotation.findUnique({
+        where: { id },
+        include: {
+          items: true,
+          user: true,
+          customer: true
+        }
+      })
+
+      if (!quotation) return { success: false, error: 'Presupuesto no encontrado' }
+      if (quotation.status === 'CONVERTED') return { success: false, error: 'El presupuesto ya fue convertido' }
+      if (quotation.status === 'CANCELLED') return { success: false, error: 'No se puede convertir un presupuesto anulado' }
+      if (quotation.status === 'EXPIRED') return { success: false, error: 'El presupuesto está vencido' }
+
+      // Get last receipt number
+      const lastSale = await prisma.sale.findFirst({
+        orderBy: { receiptNumber: 'desc' }
+      })
+      const nextReceiptNumber = (lastSale?.receiptNumber ?? 0) + 1
+
+      // Create sale from quotation
+      const sale = await prisma.sale.create({
+        data: {
+          receiptNumber: nextReceiptNumber,
+          documentType: 'FACTURA',
+          status: 'ACTIVE',
+          subtotal: quotation.subtotal,
+          taxTotal: quotation.taxTotal,
+          discount: quotation.discount,
+          total: quotation.total,
+          usdRate: quotation.usdRate,
+          notes: quotation.notes,
+          userId: quotation.userId,
+          customerId: quotation.customerId,
+          items: {
+            create: quotation.items.map(item => ({
+              quantity: item.quantity,
+              price: 0, // Will be calculated from priceUsd * usdRate
+              priceUsd: item.priceUsd,
+              discount: item.discount,
+              subtotal: item.subtotal,
+              taxRate: item.taxRate,
+              taxAmount: item.taxAmount,
+              taxBreakdown: item.taxBreakdown,
+              total: item.total,
+              productId: item.productId
+            }))
+          }
+        },
+        include: {
+          items: { include: { product: true } },
+          user: true,
+          customer: true,
+          payments: true
+        }
+      })
+
+      // Mark quotation as converted
+      await prisma.quotation.update({
+        where: { id },
+        data: { status: 'CONVERTED', convertedToSaleId: sale.id }
+      })
+
+      return { success: true, data: sale }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al convertir presupuesto') }
+    }
+  })
+
+  ipcMain.handle('quotation:cancel', async (_event, id: string) => {
+    try {
+      const quotation = await prisma.quotation.findUnique({ where: { id } })
+      if (!quotation) return { success: false, error: 'Presupuesto no encontrado' }
+      if (quotation.status === 'CONVERTED') return { success: false, error: 'No se puede anular un presupuesto convertido' }
+
+      const updated = await prisma.quotation.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: {
+          items: { include: { product: true } },
+          user: true,
+          customer: true
+        }
+      })
+
+      return { success: true, data: formatQuotation(updated) }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al anular presupuesto') }
+    }
+  })
+
+  // ─── Shift Config IPC ────────────────────────────────────
+  ipcMain.handle('shift-config:list', async () => {
+    try {
+      const configs = await prisma.shiftConfig.findMany({
+        orderBy: { order: 'asc' }
+      })
+      return { success: true, data: configs }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al listar turnos') }
+    }
+  })
+
+  ipcMain.handle('shift-config:save', async (_event, data: {
+    id?: string
+    name: string
+    days: number[]
+    startTime: string
+    endTime: string
+    order?: number
+    active?: boolean
+  }) => {
+    try {
+      const payload = {
+        name: data.name,
+        days: JSON.stringify(data.days),
+        startTime: data.startTime,
+        endTime: data.endTime,
+        order: data.order ?? 0,
+        active: data.active ?? true
+      }
+      const config = data.id
+        ? await prisma.shiftConfig.update({ where: { id: data.id }, data: payload })
+        : await prisma.shiftConfig.create({ data: payload })
+      return { success: true, data: config }
+    } catch (error) {
+      if (error instanceof AuthError) return { success: false, error: error.message }
+      return { success: false, error: fmtErr(error, 'Error al guardar turno') }
+    }
+  })
+
+  ipcMain.handle('shift-config:delete', async (_event, id: string) => {
+    try {
+      // Check if any open register uses this shift
+      const activeRegister = await prisma.cashRegister.findFirst({
+        where: { shiftConfigId: id, closingBalance: null }
+      })
+      if (activeRegister) {
+        return { success: false, error: 'No se puede eliminar un turno con caja abierta' }
+      }
+      await prisma.shiftConfig.delete({ where: { id } })
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: fmtErr(error, 'Error al eliminar turno') }
+    }
+  })
+}
+
+function formatQuotation(q: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id: q.id,
+    number: q.number,
+    status: q.status,
+    validUntil: q.validUntil,
+    subtotal: q.subtotal,
+    taxTotal: q.taxTotal,
+    discount: q.discount,
+    total: q.total,
+    usdRate: q.usdRate,
+    notes: q.notes,
+    userId: q.userId,
+    user: q.user,
+    customerId: q.customerId,
+    customer: q.customer,
+    items: q.items,
+    convertedToSaleId: q.convertedToSaleId,
+    createdAt: q.createdAt,
+    updatedAt: q.updatedAt
+  }
 }

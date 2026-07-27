@@ -1,4 +1,5 @@
 import type { Product } from '@shared/types'
+import { useCountry } from '../../shared/hooks/useCountry'
 
 interface ProductCardProps {
   product: Product
@@ -6,6 +7,8 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onSelect }: ProductCardProps): JSX.Element {
+  const { currencySymbol, defaultExchangeRate, usdRate } = useCountry()
+  const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
   const totalTaxRate = (product.taxes ?? []).reduce((sum, pt) => sum + (pt.tax?.rate ?? 0), 0)
 
   return (
@@ -25,9 +28,16 @@ export default function ProductCard({ product, onSelect }: ProductCardProps): JS
         </div>
       )}
       <p className="text-center text-caption font-medium text-ink leading-tight line-clamp-2">{product.name}</p>
-      <p className="text-body-sm font-semibold text-primary">${product.priceUsd.toFixed(2)}</p>
+      {isDualCurrency ? (
+        <>
+          <p className="text-body-sm font-semibold text-primary">{currencySymbol} {(product.priceUsd * usdRate).toFixed(2)}</p>
+          <p className="text-caption text-muted-soft">${product.priceUsd.toFixed(2)} USD</p>
+        </>
+      ) : (
+        <p className="text-body-sm font-semibold text-primary">${product.priceUsd.toFixed(2)}</p>
+      )}
       {totalTaxRate > 0 && (
-        <span className="text-caption text-muted-soft">IVA {totalTaxRate}%</span>
+        <span className="text-caption text-muted-soft">{totalTaxRate}%</span>
       )}
     </button>
   )

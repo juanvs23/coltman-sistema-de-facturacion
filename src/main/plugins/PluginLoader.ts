@@ -1,4 +1,4 @@
-import { readdirSync, existsSync, mkdirSync } from 'fs'
+import { readdirSync, existsSync, mkdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { app } from 'electron'
 import type { IPlugin } from '@plugin-api/contracts/IPlugin'
@@ -202,6 +202,7 @@ export class PluginLoader {
           return { success: false, error: result.error ?? 'Error al activar' }
         }
         this.kernel.pluginRegistryInternal.activate(id)
+        this.tryRegisterCountryPlugin(plugin)
       } catch {
         this.stateStore.save(id, { ...entry, active: false })
         return { success: false, error: 'Error al activar el plugin' }
@@ -209,6 +210,7 @@ export class PluginLoader {
     } else {
       await plugin.deactivate()
       this.kernel.pluginRegistryInternal.deactivate(id)
+      this.kernel.unregisterCountryPlugin(id)
     }
     return { success: true, data: { active: entry.active } }
   }
@@ -265,8 +267,13 @@ export class PluginLoader {
     }
 
     try {
+      // Read entry point from package.json, fallback to 'index.ts'
+      const pkgPath = join(pluginDir, 'package.json')
+      const mainEntry = existsSync(pkgPath)
+        ? (JSON.parse(readFileSync(pkgPath, 'utf-8')).main || 'index.ts')
+        : 'index.ts'
       // Dynamic import of the plugin's main file
-      const pluginModule = await import(/* @vite-ignore */ join(pluginDir, 'index.ts'))
+      const pluginModule = await import(/* @vite-ignore */ join(pluginDir, mainEntry))
       const PluginClass = pluginModule.default
 
       if (!PluginClass || typeof PluginClass !== 'function') {

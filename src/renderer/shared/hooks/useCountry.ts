@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 
+export interface FiscalAuthorityInfo {
+  name: string
+  description: string
+  electronicInvoiceLabel: string
+  electronicInvoiceDescription: string
+  autoSendLabel: string
+  autoSendDescription: string
+}
+
 export interface CountryInfo {
   countryCode: string
   countryName: string
@@ -9,7 +18,12 @@ export interface CountryInfo {
   paymentMethods: Array<{ id: string; label: string }>
   defaultTaxes: Array<{ name: string; rate: number; description?: string }>
   defaultExchangeRate: number | null
+  usdRate: number
+  fiscalAuthority?: FiscalAuthorityInfo
   loading: boolean
+  validateTaxId: (taxId: string) => { valid: boolean; error?: string }
+  formatTaxId: (taxId: string) => string
+  getPersonTypes: () => Array<{ value: string; label: string; subtypes: Array<{ value: string; label: string }> }>
 }
 
 const NEUTRAL: CountryInfo = {
@@ -26,7 +40,15 @@ const NEUTRAL: CountryInfo = {
   ],
   defaultTaxes: [],
   defaultExchangeRate: null,
-  loading: false
+  usdRate: 1,
+  fiscalAuthority: undefined,
+  loading: false,
+  validateTaxId: (taxId: string) => ({ valid: /^[VEJGP]-\d{7,8}-\d$/.test(taxId) }),
+  formatTaxId: (taxId: string) => {
+    const c = taxId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+    return c.length === 10 ? `${c[0]}-${c.slice(1, 9)}-${c.slice(9)}` : taxId
+  },
+  getPersonTypes: () => []
 }
 
 /**
@@ -38,10 +60,12 @@ export function useCountry(): CountryInfo {
 
   const load = useCallback(async () => {
     try {
-      const [pluginRes, configRes] = await Promise.all([
+      const [pluginRes, rateRes] = await Promise.all([
         window.electronAPI.getCountryPlugin(),
-        window.electronAPI.getCountryConfig()
+        window.electronAPI.getUsdRate().catch(() => ({ success: false }))
       ])
+
+      const usdRate = rateRes.success && rateRes.data?.rate ? rateRes.data.rate : 1
 
       if (pluginRes.success && pluginRes.data) {
         setCountry({
@@ -53,14 +77,17 @@ export function useCountry(): CountryInfo {
           paymentMethods: pluginRes.data.paymentMethods,
           defaultTaxes: pluginRes.data.defaultTaxes,
           defaultExchangeRate: pluginRes.data.defaultExchangeRate,
-          loading: false
+          fiscalAuthority: pluginRes.data.fiscalAuthority,
+          usdRate,
+          loading: false,
+          validateTaxId: NEUTRAL.validateTaxId,
+          formatTaxId: NEUTRAL.formatTaxId,
+          getPersonTypes: () => pluginRes.data?.personTypes ?? []
         })
       } else {
-        // No plugin active — use neutral defaults, derive country from config
-        const configCountry = configRes.success && configRes.data ? configRes.data.country : ''
         setCountry({
           ...NEUTRAL,
-          countryCode: configCountry,
+          usdRate,
           loading: false
         })
       }

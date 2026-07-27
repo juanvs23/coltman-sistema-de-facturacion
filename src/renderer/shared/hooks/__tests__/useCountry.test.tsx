@@ -16,7 +16,7 @@ describe('useCountry', () => {
 
     expect(result.current.currencySymbol).toBe('$')
     expect(result.current.taxIdLabel).toBe('Tax ID')
-    expect(result.current.countryCode).toBe('VE') // from config
+    expect(result.current.countryCode).toBe('')
     expect(result.current.paymentMethods).toHaveLength(4)
   })
 

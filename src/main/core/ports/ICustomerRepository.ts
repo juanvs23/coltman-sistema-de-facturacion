@@ -3,6 +3,9 @@ import type { Customer } from '@shared/types'
 export type CreateCustomerInput = {
   taxId: string
   name: string
+  personType?: string
+  personSubtype?: string
+  legalType?: string
   address?: string
   phone?: string
   email?: string
@@ -10,6 +13,9 @@ export type CreateCustomerInput = {
 
 export type UpdateCustomerInput = {
   name?: string
+  personType?: string
+  personSubtype?: string
+  legalType?: string
   address?: string
   phone?: string
   email?: string

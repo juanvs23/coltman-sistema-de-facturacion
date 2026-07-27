@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import type { DocumentType } from '@shared/types'
 import { useAuth } from '../../shared/hooks/useAuth'
 import { useTheme } from '../../shared/hooks/useTheme'
 import { useCountry } from '../../shared/hooks/useCountry'
+import { useActiveCashRegister } from '../../shared/hooks/useActiveCashRegister'
 
 interface TopBarProps {
   documentType: DocumentType
@@ -13,9 +15,37 @@ interface TopBarProps {
 export default function TopBar({ documentType, onDocumentTypeChange, usdRate, receiptNumber }: TopBarProps): JSX.Element {
   const { session, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const { currencySymbol } = useCountry()
+  const { currencySymbol, defaultExchangeRate } = useCountry()
+  const { register, loading } = useActiveCashRegister()
+  const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
 
-  const docLabel = documentType === 'FACTURA' ? 'Factura' : 'Ticket'
+  const registerBadge = useMemo(() => {
+    if (loading) {
+      return (
+        <div className="rounded-md bg-surface-soft px-3 py-1">
+          <span className="text-caption text-muted-soft">...</span>
+        </div>
+      )
+    }
+    if (register) {
+      const shiftName = register.shiftConfig?.name ?? 'Turno'
+      return (
+        <div className="rounded-md bg-success/10 px-3 py-1 flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+          <span className="text-caption font-medium text-success">{shiftName}</span>
+        </div>
+      )
+    }
+    return (
+      <div className="rounded-md bg-error/10 px-3 py-1 flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-error" />
+        <span className="text-caption font-medium text-error">Caja cerrada</span>
+      </div>
+    )
+  }, [register, loading])
+
+  const docLabel = documentType === 'FACTURA' ? 'Factura' : 'Presupuesto'
+  const isPresupuesto = documentType === 'PRESUPUESTO'
   const paddedNumber = String(receiptNumber).padStart(4, '0')
 
   return (
@@ -34,14 +64,14 @@ export default function TopBar({ documentType, onDocumentTypeChange, usdRate, re
             Factura
           </button>
           <button
-            onClick={() => onDocumentTypeChange('TICKET')}
+            onClick={() => onDocumentTypeChange('PRESUPUESTO')}
             className={`px-3 py-1 text-caption font-medium transition-colors ${
-              documentType === 'TICKET'
+              documentType === 'PRESUPUESTO'
                 ? 'bg-primary text-on-primary'
                 : 'text-muted hover:bg-surface-soft hover:text-ink'
             }`}
           >
-            Ticket
+            Presupuesto
           </button>
         </div>
 
@@ -50,14 +80,21 @@ export default function TopBar({ documentType, onDocumentTypeChange, usdRate, re
         </div>
         <h1 className="text-title-md text-ink">Sistema de Facturación</h1>
 
-        {/* USD Rate + Receipt number */}
+        {/* Cash register badge */}
+        <div className="ml-1">
+          {registerBadge}
+        </div>
+
+        {/* Exchange rate + Receipt number */}
         <div className="flex items-center gap-3 border-l border-hairline pl-3 ml-1">
-          <div className="rounded-md bg-surface-soft px-3 py-1">
-            <span className="text-caption text-muted">Tasa: </span>
-            <span className="text-caption font-mono font-medium text-ink">
-              {currencySymbol} {usdRate.toFixed(2)}
-            </span>
-          </div>
+          {isDualCurrency && usdRate > 0 && (
+            <div className="rounded-md bg-surface-soft px-3 py-1">
+              <span className="text-caption text-muted">Tasa: </span>
+              <span className="text-caption font-mono font-medium text-ink">
+                {currencySymbol} {usdRate.toFixed(2)}
+              </span>
+            </div>
+          )}
           <div className="rounded-md bg-primary/10 px-3 py-1">
             <span className="text-caption font-mono font-medium text-primary">
               {docLabel} N° {paddedNumber}

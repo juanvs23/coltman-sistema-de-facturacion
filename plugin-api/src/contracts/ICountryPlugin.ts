@@ -8,6 +8,8 @@
 export interface TaxIdValidation {
   valid: boolean
   error?: string
+  personType?: string   // V, E, J, G, P extraído del taxId
+  personTypeLabel?: string // "Venezolano", "Extranjero", "Jurídico", etc.
 }
 
 export interface PaymentMethod {
@@ -19,6 +21,15 @@ export interface DefaultTax {
   name: string
   rate: number
   description?: string
+}
+
+export interface FiscalAuthorityConfig {
+  name: string
+  description: string
+  electronicInvoiceLabel: string
+  electronicInvoiceDescription: string
+  autoSendLabel: string
+  autoSendDescription: string
 }
 
 export interface ICountryPlugin {
@@ -60,4 +71,8 @@ export interface ICountryPlugin {
 
   /** Tasa de cambio por defecto (si el país usa moneda dual) */
   getDefaultExchangeRate?(): number | null
+
+  /** Configuración de la autoridad fiscal del país (SENIAT, DIAN, SAT, etc.) */
+  getFiscalAuthorityConfig?(): FiscalAuthorityConfig
+  getPersonTypes?(): Array<{ value: string; label: string; subtypes: Array<{ value: string; label: string }> }>
 }

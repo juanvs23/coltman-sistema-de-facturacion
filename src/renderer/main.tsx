@@ -4,6 +4,14 @@ import App from './App'
 import './styles/globals.css'
 
 // Dev mock: permite probar UI desde navegador sin Electron
+// Estado mutable para los mocks de caja
+let mockActiveRegister: { id: string; openingBalance: number; openedAt: string; shiftConfig: null; openedBy: { fullName: string } } | null = {
+  id: 'reg-mock', openingBalance: 200, openedAt: new Date().toISOString(), shiftConfig: null, openedBy: { fullName: 'Administrador Principal' }
+}
+const mockMovements: Array<{ id: string; type: string; amount: number; description: string; createdAt: string; user: { fullName: string } }> = [
+  { id: 'm1', type: 'OPENING', amount: 200, description: 'Apertura de caja', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } }
+]
+
 if (!window.electronAPI) {
   // Plugin states persistentes (localStorage para sobrevivir reloads)
   const readPluginState = (id: string, defaultActive = false): boolean => {
@@ -168,26 +176,53 @@ if (!window.electronAPI) {
     }),
     cancelSale: async () => ({ success: true, data: { status: 'CANCELLED' } }),
     getNextReceiptNumber: async () => ({ success: true, data: 1004 }),
-    openRegister: async () => ({ success: true, data: { id: 'reg-1', openingBalance: 200 } }),
-    closeRegister: async () => ({ success: true }),
-    getCashSummary: async () => ({
-      success: true,
-      data: {
-        register: {
-          id: 'reg-1', openingBalance: 200, closingBalance: null, date: new Date().toISOString(), createdAt: new Date().toISOString(),
-          movements: [
-            { id: 'm1', type: 'OPENING', amount: 200, description: 'Apertura de caja', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } },
-            { id: 'm2', type: 'INCOME', amount: 50, description: 'Ingreso extra', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } }
-          ]
-        },
-        sales: [
-          { payments: [{ method: 'CASH', amountBs: 92.8 }] },
-          { payments: [{ method: 'TRANSFER', amountBs: 53 }] },
-          { payments: [{ method: 'CASH', amountBs: 120 }] }
-        ]
+    getActiveCashRegister: async () => {
+      const reg = mockActiveRegister
+      if (!reg) return { success: true, data: null }
+      return {
+        success: true,
+        data: { id: reg.id, openingBalance: reg.openingBalance, openedAt: reg.openedAt, shiftConfig: reg.shiftConfig, openedBy: reg.openedBy }
       }
-    }),
+    },
+    openRegister: async (data) => {
+      const id = crypto.randomUUID()
+      mockActiveRegister = {
+        id,
+        openingBalance: data.balance,
+        openedAt: new Date().toISOString(),
+        shiftConfig: null,
+        openedBy: { fullName: 'Administrador Principal' }
+      }
+      mockMovements.length = 0
+      mockMovements.push({ id: 'm1', type: 'OPENING', amount: data.balance, description: 'Apertura de caja', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } })
+      window.dispatchEvent(new CustomEvent('register:changed'))
+      return { success: true, data: { id, openingBalance: data.balance } }
+    },
+    closeRegister: async (data) => {
+      mockActiveRegister = null
+      mockMovements.push({ id: 'm-close', type: 'CLOSING', amount: data.closingBalance ?? 0, description: 'Cierre de caja', createdAt: new Date().toISOString(), user: { fullName: 'Administrador Principal' } })
+      window.dispatchEvent(new CustomEvent('register:changed'))
+      return { success: true }
+    },
     addCashMovement: async () => ({ success: true }),
+    getCashSummary: async (_options) => {
+      const reg = mockActiveRegister
+      return {
+        success: true,
+        data: {
+          registers: reg ? [{
+            id: reg.id, openingBalance: reg.openingBalance, closingBalance: null, openedAt: reg.openedAt,
+            openedBy: reg.openedBy,
+            movements: mockMovements
+          }] : [],
+          sales: [
+            { payments: [{ method: 'CASH', amountBs: 92.8 }] },
+            { payments: [{ method: 'TRANSFER', amountBs: 53 }] },
+            { payments: [{ method: 'CASH', amountBs: 120 }] }
+          ]
+        }
+      }
+    },
     getDailyReport: async () => ({
       success: true,
       data: { date: new Date().toISOString(), sales: 8, total: 525.5, byMethod: { CASH: 212.8, TRANSFER: 153, DIVISA: 120, count: 8 } }
@@ -224,29 +259,48 @@ if (!window.electronAPI) {
     }),
     updateCompanyConfig: async () => ({ success: true, data: { businessName: 'Mi Negocio C.A.' } }),
     getUsdRate: async () => ({ success: true, data: { rate: 48.50, source: 'bcv' } }),
-    getConfig: async () => ({ success: true, data: { country: 'VE', currencySymbol: 'Bs.', usdRate: 48.50, usdRateSource: 'bcv', usdAutoUpdate: false, taxRateDefault: 16, lowStockThreshold: 10, darkMode: false, inactivityTimeout: 600 } }),
-    getCountryPlugin: async () => ({
-      success: true,
-      data: {
-        countryCode: 'VE',
-        countryName: 'Venezuela',
-        currencySymbol: 'Bs.',
-        currencyCode: 'VES',
-        taxIdLabel: 'RIF',
-        paymentMethods: [
-          { id: 'CASH', label: 'Efectivo' },
-          { id: 'TRANSFER', label: 'Transferencia' },
-          { id: 'DEBIT_CARD', label: 'Tarjeta de Débito' },
-          { id: 'CREDIT_CARD', label: 'Tarjeta de Crédito' },
-          { id: 'DIVISA', label: 'Divisa (USD)' }
-        ],
-        defaultTaxes: [
-          { name: 'IVA General 16%', rate: 16.0, description: 'Impuesto al Valor Agregado' }
-        ],
-        defaultExchangeRate: null
+    getConfig: async () => ({ success: true, data: { country: '', currencySymbol: '$', usdRate: 1, usdRateSource: 'manual', usdAutoUpdate: false, taxRateDefault: 0, lowStockThreshold: 10, darkMode: false, inactivityTimeout: 600 } }),
+    getCountryPlugin: async () => {
+      const active = readPluginState('plugin-ve', true)
+      if (!active) return { success: true, data: null }
+      return {
+        success: true,
+        data: {
+          countryCode: 'VE',
+          countryName: 'Venezuela',
+          currencySymbol: 'Bs.',
+          currencyCode: 'VES',
+          taxIdLabel: 'RIF',
+          paymentMethods: [
+            { id: 'CASH', label: 'Efectivo' },
+            { id: 'TRANSFER', label: 'Transferencia' },
+            { id: 'DEBIT_CARD', label: 'Tarjeta de Débito' },
+            { id: 'CREDIT_CARD', label: 'Tarjeta de Crédito' },
+            { id: 'DIVISA', label: 'Divisa (USD)' }
+          ],
+          defaultTaxes: [
+            { name: 'IVA General 16%', rate: 16.0, description: 'Impuesto al Valor Agregado' }
+          ],
+          defaultExchangeRate: 48.50,
+          personTypes: [
+            { value: 'V', label: 'Natural Venezolano', subtypes: [{ value: 'contribuyente', label: 'Contribuyente ordinario' }, { value: 'no_contribuyente', label: 'No contribuyente' }, { value: 'especial', label: 'Sujeto pasivo especial' }, { value: 'independiente', label: 'Trabajador independiente' }, { value: 'dependiente', label: 'Empleado / Dependiente' }] },
+            { value: 'E', label: 'Natural Extranjero', subtypes: [{ value: 'contribuyente', label: 'Contribuyente ordinario' }, { value: 'no_contribuyente', label: 'No contribuyente' }, { value: 'independiente', label: 'Trabajador independiente' }] },
+            { value: 'J', label: 'Jurídico', subtypes: [{ value: 'contribuyente', label: 'Contribuyente ordinario' }, { value: 'especial', label: 'Sujeto pasivo especial' }, { value: 'no_contribuyente', label: 'No contribuyente' }] },
+            { value: 'G', label: 'Gobierno', subtypes: [{ value: 'gobierno', label: 'Ente gubernamental' }] },
+            { value: 'P', label: 'Pasaporte', subtypes: [{ value: 'no_contribuyente', label: 'No contribuyente' }] }
+          ],
+          fiscalAuthority: {
+            name: 'SENIAT',
+            description: 'Configuracion para facturacion electronica ante el SENIAT.',
+            electronicInvoiceLabel: 'Facturacion electronica SENIAT',
+            electronicInvoiceDescription: 'Habilita el envio automatico de facturas al SENIAT',
+            autoSendLabel: 'Envio automatico',
+            autoSendDescription: 'Envia facturas automaticamente al generarlas'
+          }
+        }
       }
-    }),
-    getCountryConfig: async () => ({ success: true, data: { country: 'VE' } }),
+    },
+    getCountryConfig: async () => ({ success: true, data: { country: '' } }),
     updateConfig: async (data) => ({ success: true, data }),
     testPrinter: async () => ({ success: false, error: 'No implementado en modo browser' }),
     printReceipt: async () => ({ success: false, error: 'No implementado en modo browser' }),
@@ -343,7 +397,62 @@ if (!window.electronAPI) {
       writePluginState(id, !current)
       return { success: true, data: { active: !current } }
     },
-    subscribeUiRegistry: async () => ({ success: true, data: { menuItems: [], routes: [], settingsTabs: [] } })
+    subscribeUiRegistry: async () => ({ success: true, data: { menuItems: [], routes: [], settingsTabs: [] } }),
+
+    // Shift Config (mock)
+    listShiftConfigs: async () => ({
+      success: true,
+      data: [
+        { id: 'shift-1', name: 'Turno Mañana', days: JSON.stringify([1,2,3,4,5]), startTime: '08:00', endTime: '14:00', order: 1, active: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'shift-2', name: 'Turno Tarde', days: JSON.stringify([1,2,3,4,5]), startTime: '14:00', endTime: '20:00', order: 2, active: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      ]
+    }),
+    saveShiftConfig: async (data) => ({ success: true, data: { id: data.id ?? crypto.randomUUID(), ...data, days: JSON.stringify(data.days), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } }),
+    deleteShiftConfig: async () => ({ success: true }),
+
+    // Quotations (mock)
+    createQuotation: async (input) => {
+      const validUntil = new Date()
+      validUntil.setDate(validUntil.getDate() + 30)
+      return {
+        success: true,
+        data: {
+          id: crypto.randomUUID(),
+          number: Math.floor(Math.random() * 1000) + 1,
+          status: 'DRAFT',
+          validUntil: validUntil.toISOString(),
+          subtotal: 100,
+          taxTotal: 16,
+          discount: 0,
+          total: 116,
+          usdRate: 48.5,
+          notes: input.notes ?? null,
+          userId: input.userId ?? 'mock-id',
+          user: { id: 'mock-id', username: 'admin', fullName: 'Admin' },
+          customerId: input.customerId ?? null,
+          customer: null,
+          items: (input.items ?? []).map((item, i) => ({
+            id: `qi-${i}`,
+            quantity: item.quantity,
+            priceUsd: item.priceUsd,
+            discount: item.discount ?? 0,
+            subtotal: item.quantity * item.priceUsd,
+            taxRate: 16,
+            taxAmount: item.quantity * item.priceUsd * 0.16,
+            total: item.quantity * item.priceUsd * 1.16,
+            productId: item.productId,
+            product: { id: item.productId, code: 'MOCK', name: 'Producto Mock', priceUsd: item.priceUsd, price: item.priceUsd * 48.5, stock: 100, active: true }
+          })),
+          convertedToSaleId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      }
+    },
+    listQuotations: async () => ({ success: true, data: [] }),
+    getQuotation: async () => ({ success: false, error: 'No implementado en modo browser' }),
+    convertQuotationToSale: async () => ({ success: false, error: 'No implementado en modo browser' }),
+    cancelQuotation: async () => ({ success: false, error: 'No implementado en modo browser' })
   }
 }
 

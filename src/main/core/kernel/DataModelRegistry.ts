@@ -1,67 +1,86 @@
-/**
- * Data Model Registry — manages plugin data model schemas.
- *
- * Plugins can extend the database schema by registering Prisma models.
- * All plugin tables MUST use the namespace `plugin_<id>_` to prevent
- * collisions between plugins.
- *
- * @packageDocumentation
- */
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 
 import type { PluginResult, PluginSchema } from '@plugin-api/types'
+
+const execAsync = promisify(exec)
 
 /** Regex to extract model names from a Prisma schema string */
 const MODEL_NAME_REGEX = /model\s+(\w+)\s*\{/g
 
-/**
- * DataModelRegistry — validates, stores, and (in future phases) migrates
- * plugin data models.
- *
- * @example
- * ```ts
- * const registry = new DataModelRegistry()
- *
- * // Valid schema with correct prefix
- * const valid = await registry.registerSchema('my-plugin', `
- *   model plugin_my_plugin_Settings {
- *     id Int @id @default(autoincrement())
- *     key String
- *   }
- * `)
- * // valid.success === true
- *
- * // Invalid schema — missing prefix
- * const invalid = await registry.registerSchema('my-plugin', `
- *   model OrphanTable { id Int @id }
- * `)
- * // invalid.success === false, invalid.error contains explanation
- * ```
- */
-export class DataModelRegistry {
-  /** Stored schemas per plugin id */
-  private schemas: Map<string, PluginSchema> = new Map()
+/** Regex to strip generator/datasource blocks from plugin schemas */
+const BLOCK_STRIP_REGEX = /^\s*(generator|datasource)\s+\w+\s*\{[^}]*\}\s*/gm
 
-  /**
-   * Register and validate a plugin's Prisma schema.
-   *
-   * Validation rules:
-   * - All model names MUST start with `plugin_<id>_`
-   * - At least one model MUST be declared
-   *
-   * @param id - Plugin identifier (used to build the expected prefix)
-   * @param schema - Raw Prisma schema string
-   * @returns PluginResult — success if valid, error with message if not
-   */
+export type ReadFileFn = (path: string, encoding: 'utf-8') => Promise<string>
+export type WriteFileFn = (path: string, data: string, encoding: 'utf-8') => Promise<void>
+export type MkdirFn = (path: string, options: { recursive: boolean }) => Promise<void>
+export type UnlinkFn = (path: string) => Promise<void>
+export type RunCommand = (cmd: string) => Promise<{ stdout: string; stderr: string }>
+
+export interface DataModelMigrationConfig {
+  /** Absolute path to the core prisma/schema.prisma file */
+  coreSchemaPath?: string
+  /** Custom command runner (injectable for tests) */
+  runCommand?: RunCommand
+  /** File system helpers (injectable for tests) */
+  readFile?: ReadFileFn
+  writeFile?: WriteFileFn
+  mkdir?: MkdirFn
+  unlink?: UnlinkFn
+}
+
+const defaultRunCommand: RunCommand = async (cmd) => {
+  const { stdout, stderr } = await execAsync(cmd)
+  return { stdout, stderr }
+}
+
+const defaultReadFile: ReadFileFn = async (path, encoding) => {
+  const { readFile } = await import('node:fs/promises')
+  return readFile(path, encoding)
+}
+
+const defaultWriteFile: WriteFileFn = async (path, data, encoding) => {
+  const { writeFile } = await import('node:fs/promises')
+  return writeFile(path, data, encoding)
+}
+
+const defaultMkdir: MkdirFn = async (path, options) => {
+  const { mkdir } = await import('node:fs/promises')
+  return mkdir(path, options)
+}
+
+const defaultUnlink: UnlinkFn = async (path) => {
+  const { unlink } = await import('node:fs/promises')
+  return unlink(path)
+}
+
+export class DataModelRegistry {
+  private schemas: Map<string, PluginSchema> = new Map()
+  private coreSchemaPath: string
+  private runCommand: RunCommand
+  private readFile: ReadFileFn
+  private writeFile: WriteFileFn
+  private mkdir: MkdirFn
+  private unlink: UnlinkFn
+
+  constructor(config?: DataModelMigrationConfig) {
+    this.coreSchemaPath = config?.coreSchemaPath ?? join(process.cwd(), 'prisma', 'schema.prisma')
+    this.runCommand = config?.runCommand ?? defaultRunCommand
+    this.readFile = config?.readFile ?? defaultReadFile
+    this.writeFile = config?.writeFile ?? defaultWriteFile
+    this.mkdir = config?.mkdir ?? defaultMkdir
+    this.unlink = config?.unlink ?? defaultUnlink
+  }
+
   async registerSchema(id: string, schema: string): Promise<PluginResult> {
-    // Sanitize id: replace characters invalid in Prisma model names (e.g. hyphens)
-    // with underscores so the namespace prefix is a valid Prisma identifier
     const sanitizedId = id.replace(/[^a-zA-Z0-9_]/g, '_')
     const expectedPrefix = `plugin_${sanitizedId}_`
 
-    // Extract all model names from the schema
     const modelNames: string[] = []
     let match: RegExpExecArray | null
-    MODEL_NAME_REGEX.lastIndex = 0 // Reset regex state
+    MODEL_NAME_REGEX.lastIndex = 0
 
     while ((match = MODEL_NAME_REGEX.exec(schema)) !== null) {
       modelNames.push(match[1])
@@ -74,7 +93,6 @@ export class DataModelRegistry {
       }
     }
 
-    // Check each model has the required prefix
     const invalidModels = modelNames.filter(
       (name) => !name.startsWith(expectedPrefix)
     )
@@ -89,43 +107,53 @@ export class DataModelRegistry {
       }
     }
 
-    // Store the validated schema
     this.schemas.set(id, { id, schema })
     return { success: true }
   }
 
-  /**
-   * Get a stored plugin schema.
-   *
-   * @param id - Plugin identifier
-   * @returns PluginSchema or null if not found
-   */
   getSchema(id: string): PluginSchema | null {
     return this.schemas.get(id) ?? null
   }
 
-  /**
-   * List all registered schemas.
-   */
   listSchemas(): PluginSchema[] {
     return Array.from(this.schemas.values())
   }
 
-  /**
-   * Stub: runs migration for a plugin's schema.
-   *
-   * Phase 4 will implement actual Prisma migration execution.
-   *
-   * @param id - Plugin identifier
-   * @returns PluginResult with migration info
-   */
   async migrate(id: string): Promise<PluginResult<{ migrated: boolean; pluginId: string }>> {
-    return {
-      success: true,
-      data: {
-        migrated: false,
-        pluginId: id
+    const schema = this.schemas.get(id)
+    if (!schema) {
+      return {
+        success: false,
+        error: `No schema registered for plugin "${id}". Call registerSchema() first.`
       }
+    }
+
+    const sanitizedId = id.replace(/[^a-zA-Z0-9_]/g, '_')
+    const cleanPluginSchema = schema.schema.replace(BLOCK_STRIP_REGEX, '').trim()
+
+    if (!cleanPluginSchema) {
+      return {
+        success: false,
+        error: `Plugin "${id}" schema has no model definitions after sanitization.`
+      }
+    }
+
+    try {
+      const coreSchema = await this.readFile(this.coreSchemaPath, 'utf-8')
+      const combined = `${coreSchema.trim()}\n\n// Plugin: ${id}\n${cleanPluginSchema}\n`
+
+      const tmpDir = join(tmpdir(), 'plugin-migrations')
+      const tmpFile = join(tmpDir, `schema-${sanitizedId}.prisma`)
+      await this.mkdir(tmpDir, { recursive: true })
+      await this.writeFile(tmpFile, combined, 'utf-8')
+
+      await this.runCommand(`npx prisma db push --schema="${tmpFile}" --accept-data-loss`)
+
+      await this.unlink(tmpFile).catch(() => {})
+
+      return { success: true, data: { migrated: true, pluginId: id } }
+    } catch (error) {
+      return { success: false, error: `Migration failed for plugin "${id}": ${(error as Error).message}` }
     }
   }
 }

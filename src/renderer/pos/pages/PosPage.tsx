@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
-import type { Product, Sale, Customer, DocumentType } from '@shared/types'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import type { Product, Sale, DocumentType, QuotationData } from '@shared/types'
 import { useNavigation } from '../../shared/hooks/useNavigation'
 import { useAuth } from '../../shared/hooks/useAuth'
 import { useInactivityLock } from '../../shared/hooks/useInactivityLock'
+import { useActiveCashRegister } from '../../shared/hooks/useActiveCashRegister'
 import LockOverlay from '../../auth/organisms/LockOverlay'
 import TopBar from '../organisms/TopBar'
 import Sidebar from '../organisms/Sidebar'
@@ -14,25 +15,67 @@ import ShoppingCart from '../organisms/ShoppingCart'
 import PaymentModal from '../organisms/PaymentModal'
 import type { PaymentData } from '../organisms/PaymentModal'
 import ReceiptConfirm from '../organisms/ReceiptConfirm'
+import QuotationConfirm from '../organisms/QuotationConfirm'
 import type { CartEntry } from '../organisms/ShoppingCart'
 
 export default function PosPage(): JSX.Element {
-  const { activeView } = useNavigation()
+  const { activeView, navigate } = useNavigation()
   const { session } = useAuth()
+  const { register: activeRegister, loading: registerLoading } = useActiveCashRegister()
   const [entries, setEntries] = useState<CartEntry[]>([])
   const [usdRate, setUsdRate] = useState(0)
   const [receiptNumber, setReceiptNumber] = useState(0)
   const [focusKey, setFocusKey] = useState(0)
   const [showPayment, setShowPayment] = useState(false)
   const [lastSale, setLastSale] = useState<Sale | null>(null)
-  const [documentType, setDocumentType] = useState<DocumentType>('TICKET')
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [lastQuotation, setLastQuotation] = useState<QuotationData | null>(null)
+  const [documentType, setDocumentType] = useState<DocumentType>('FACTURA')
   const [globalDiscount, setGlobalDiscount] = useState(0)
   const [inactivityTimeout, setInactivityTimeout] = useState(600)
+  const [showRegisterWarning, setShowRegisterWarning] = useState(false)
 
   const { isLocked, lockError, unlock } = useInactivityLock(inactivityTimeout)
 
-  const isModalOpen = showPayment || lastSale !== null
+  const isPresupuesto = documentType === 'PRESUPUESTO'
+  const isModalOpen = showPayment || lastSale !== null || lastQuotation !== null || showRegisterWarning
+
+  const hasActiveRegister = !registerLoading && activeRegister !== null
+
+  const registerWarningModal = useMemo(() => {
+    if (!showRegisterWarning) return null
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-xl bg-canvas p-6 shadow-2xl">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
+              <svg className="h-6 w-6 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-title-md text-ink font-semibold">Caja cerrada</h3>
+            <p className="text-body-sm text-muted">
+              No hay un turno de caja abierto. Debe abrir caja antes de poder realizar cobros.
+            </p>
+            <div className="flex gap-3 w-full mt-2">
+              <button
+                onClick={() => setShowRegisterWarning(false)}
+                className="flex-1 rounded-lg border border-hairline px-4 py-2.5 text-body-sm font-medium text-muted hover:text-ink hover:bg-surface-soft transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setShowRegisterWarning(false); navigate('cash') }}
+                className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-body-sm font-medium text-on-primary hover:bg-primary-active transition-colors"
+              >
+                Abrir caja
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }, [showRegisterWarning, navigate])
 
   const loadRate = useCallback(async () => {
     const res = await window.electronAPI.getUsdRate()
@@ -68,7 +111,13 @@ export default function PosPage(): JSX.Element {
       }
       if (e.key === 'F4' && entries.length > 0) {
         e.preventDefault()
-        setShowPayment(true)
+        requireRegister(() => {
+          if (isPresupuesto) {
+            handleCreateQuotation()
+          } else {
+            setShowPayment(true)
+          }
+        })
       }
       if (e.key === 'Escape' && entries.length > 0) {
         e.preventDefault()
@@ -77,12 +126,28 @@ export default function PosPage(): JSX.Element {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [entries, activeView, isModalOpen])
+  }, [entries, activeView, isModalOpen, isPresupuesto, hasActiveRegister])
 
   const handleShortcut = (key: string): void => {
     if (key === 'F2') setFocusKey(k => k + 1)
-    if (key === 'F4' && entries.length > 0) setShowPayment(true)
-    if (key === 'F9' && entries.length > 0) setShowPayment(true)
+    if (key === 'F4' && entries.length > 0) {
+      requireRegister(() => {
+        if (isPresupuesto) {
+          handleCreateQuotation()
+        } else {
+          setShowPayment(true)
+        }
+      })
+    }
+    if (key === 'F9' && entries.length > 0) {
+      requireRegister(() => {
+        if (isPresupuesto) {
+          handleCreateQuotation()
+        } else {
+          setShowPayment(true)
+        }
+      })
+    }
   }
 
   const handleSelectProduct = (product: Product): void => {
@@ -119,6 +184,48 @@ export default function PosPage(): JSX.Element {
     setEntries([])
   }
 
+  const requireRegister = (action: () => void): void => {
+    if (hasActiveRegister) {
+      action()
+    } else {
+      setShowRegisterWarning(true)
+    }
+  }
+
+  const handleCheckoutClick = (): void => {
+    requireRegister(() => setShowPayment(true))
+  }
+
+  const handleQuotationClick = (): void => {
+    requireRegister(() => handleCreateQuotation())
+  }
+
+  const handleCreateQuotation = async (customerId?: string): Promise<void> => {
+    if (!session) return
+
+    const res = await window.electronAPI.createQuotation({
+      items: entries.map(e => ({
+        productId: e.product.id,
+        quantity: e.quantity,
+        priceUsd: e.product.priceUsd,
+        discount: e.discount || undefined
+      })),
+      discount: 0,
+      usdRate,
+      notes: undefined,
+      userId: session.userId,
+      customerId
+    })
+
+    if (!res.success) {
+      console.error('Error al crear presupuesto:', res.error)
+      return
+    }
+
+    setLastQuotation(res.data ?? null)
+    setEntries([])
+  }
+
   const handleCheckout = async (data: PaymentData): Promise<void> => {
     if (!session) throw new Error('Sesión no encontrada')
 
@@ -134,11 +241,18 @@ export default function PosPage(): JSX.Element {
       payments: data.payments,
       usdRate,
       notes: data.notes,
+      motivo: data.motivo,
+      customerNotes: data.customerNotes,
       userId: session.userId,
-      customerId: selectedCustomer?.id
+      customerId: data.customerId
     })
 
-    if (!res.success) throw new Error(res.error ?? 'Error al crear venta')
+    if (!res.success) {
+      if (res.error === 'CASH_REGISTER_REQUIRED') {
+        throw new Error('No hay un turno de caja abierto. Abra caja antes de cobrar.')
+      }
+      throw new Error(res.error ?? 'Error al crear venta')
+    }
 
     setLastSale(res.data ?? null)
     setShowPayment(false)
@@ -148,7 +262,7 @@ export default function PosPage(): JSX.Element {
 
   const handleNewSale = (): void => {
     setLastSale(null)
-    setSelectedCustomer(null)
+    setLastQuotation(null)
     setGlobalDiscount(0)
   }
 
@@ -183,14 +297,12 @@ export default function PosPage(): JSX.Element {
                   entries={entries}
                   usdRate={usdRate}
                   documentType={documentType}
-                  selectedCustomer={selectedCustomer}
                   globalDiscount={globalDiscount}
-                  onCustomerChange={setSelectedCustomer}
                   onUpdateQuantity={handleUpdateQuantity}
                   onUpdateDiscount={handleUpdateDiscount}
                   onRemove={handleRemove}
                   onClear={handleClear}
-                  onCheckout={() => setShowPayment(true)}
+                  onCheckout={isPresupuesto ? handleQuotationClick : handleCheckoutClick}
                 />
               </div>
             </div>
@@ -206,7 +318,6 @@ export default function PosPage(): JSX.Element {
           entries={entries}
           usdRate={usdRate}
           documentType={documentType}
-          customerId={selectedCustomer?.id}
           globalDiscount={globalDiscount}
           onConfirm={handleCheckout}
           onCancel={() => setShowPayment(false)}
@@ -220,6 +331,17 @@ export default function PosPage(): JSX.Element {
           onNewSale={handleNewSale}
         />
       )}
+
+      {/* Quotation Confirmation */}
+      {lastQuotation && (
+        <QuotationConfirm
+          quotation={lastQuotation}
+          onNewQuotation={handleNewSale}
+        />
+      )}
+
+      {/* Cash Register Warning */}
+      {registerWarningModal}
 
       {/* Inactivity Lock Overlay */}
       {isLocked && (

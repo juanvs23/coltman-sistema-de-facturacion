@@ -23,7 +23,8 @@ export default function SaleRow({ sale, onViewDetail, onCancel }: SaleRowProps):
   const date = new Date(sale.createdAt)
   const customerName = sale.customer?.name || (sale.documentType === 'FACTURA' ? '—' : 'Consumidor Final')
   const isCancelled = sale.status === 'CANCELLED'
-  const { currencySymbol } = useCountry()
+  const { currencySymbol, defaultExchangeRate } = useCountry()
+  const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
 
   return (
     <tr className={`border-b border-hairline transition-colors hover:bg-surface-soft/50 ${isCancelled ? 'opacity-50' : ''}`}>
@@ -42,8 +43,14 @@ export default function SaleRow({ sale, onViewDetail, onCancel }: SaleRowProps):
           : '—'}
       </td>
       <td className="px-4 py-3 text-body-sm font-medium text-ink text-right">
-        ${sale.total.toFixed(2)}
-        <span className="block text-caption text-muted-soft">{currencySymbol} {((sale.usdRate ?? 0) > 0 ? sale.total / (sale.usdRate ?? 1) : 0).toFixed(2)}</span>
+        {isDualCurrency ? (
+          <>
+            <p>{currencySymbol} {sale.total.toFixed(2)}</p>
+            <span className="block text-caption text-muted-soft">${(sale.usdRate && sale.usdRate > 0 ? sale.total / sale.usdRate : 0).toFixed(2)} USD</span>
+          </>
+        ) : (
+          <p>${sale.total.toFixed(2)}</p>
+        )}
       </td>
       <td className="px-4 py-3 text-caption text-muted">{sale.user?.fullName ?? '—'}</td>
       <td className="px-4 py-3 text-caption text-muted">

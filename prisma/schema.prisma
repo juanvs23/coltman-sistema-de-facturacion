@@ -34,9 +34,12 @@ model User {
 
   sales            Sale[]
   cancelledSales   Sale[]          @relation("CancelledSale")
+  quotations       Quotation[]
+  openedRegisters  CashRegister[]  @relation("OpenedRegister")
+  closedRegisters  CashRegister[]  @relation("ClosedRegister")
   movements        CashMovement[]
-  closedRegisters  CashRegister[]
   rateChanges      UsdRate[]
+  invoiceDocuments InvoiceDocument[]
 }
 
 model Permission {
@@ -60,17 +63,21 @@ model RolePermission {
 // ─── Customers (RIF / datos fiscales) ────────────────────────
 
 model Customer {
-  id        String   @id @default(uuid())
-  taxId     String   @unique // Identificador fiscal: RIF (VE), NIT (CO), RFC (MX), RUC (EC)
-  name      String
-  address   String?
-  phone     String?
-  email     String?
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  taxId        String   @unique // RIF, NIT, RFC, RUC
+  name         String
+  personType   String   @default("V") // V=Natural Venezolano, E=Natural Extranjero, J=Jurídico, G=Gobierno
+  personSubtype String  @default("contribuyente") // contribuyente, no_contribuyente, especial, independiente, dependiente
+  legalType    String?  // CA, SRL, SC, FUNDACION (solo para Jurídicas)
+  address      String?
+  phone        String?
+  email        String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   sales     Sale[]
+  quotations Quotation[]
 }
 
 // ─── Products & Inventory ────────────────────────────────────
@@ -98,8 +105,9 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  saleItems   SaleItem[]
-  taxes       ProductTax[]
+  saleItems        SaleItem[]
+  quotationItems   QuotationItem[]
+  taxes            ProductTax[]
 }
 
 model Category {
@@ -144,6 +152,15 @@ enum SaleStatus {
 enum DocumentType {
   FACTURA       // Factura fiscal — requiere cliente
   TICKET        // Ticket consumidor final — sin datos de cliente
+  PRESUPUESTO   // Presupuesto / cotización — no afecta stock ni reportes
+}
+
+enum QuotationStatus {
+  DRAFT         // Borrador
+  SENT          // Enviado al cliente
+  CONVERTED     // Convertido a factura
+  EXPIRED       // Vencido
+  CANCELLED     // Anulado
 }
 
 enum PaymentMethod {
@@ -172,11 +189,14 @@ model Sale {
   cancelledAt     DateTime?
   cancelledById   String?
   cancelledBy     User?        @relation("CancelledSale", fields: [cancelledById], references: [id])
+  cashRegisterId  String?
+  cashRegister    CashRegister? @relation(fields: [cashRegisterId], references: [id])
 
   items SaleItem[]
   payments PaymentEntry[]
   customerId   String?
   customer     Customer?   @relation(fields: [customerId], references: [id])
+  invoiceDocument InvoiceDocument?
 }
 
 model SaleItem {
@@ -202,11 +222,76 @@ model PaymentEntry {
   id        String  @id @default(uuid())
   method    String  // CASH, TRANSFER, DEBIT_CARD, CREDIT_CARD, DIVISA
   amountBs  Float   // Monto en bolívares
-  reference String? // Número de referencia (transferencia, último 4 dígitos)
+  reference String? // Número de autorización / referencia
+  bank      String? // Banco de origen (VE: Banesco, Mercantil, Provincial, etc.)
   saleId    String
   sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
   @@index([saleId])
+}
+
+// ─── Quotations (Presupuestos) ───────────────────────────────
+// Presupuestos no afectan stock, caja, ni reportes de ventas.
+// Son cotizaciones que pueden convertirse en una factura (Sale).
+
+model Quotation {
+  id              String          @id @default(uuid())
+  number          Int             @unique // Correlativo independiente
+  status          QuotationStatus @default(DRAFT)
+  validUntil      DateTime        // Fecha de vencimiento del presupuesto
+  subtotal        Float
+  taxTotal        Float
+  discount        Float           @default(0)
+  total           Float
+  usdRate         Float?          // Tasa del dólar al momento de crear el presupuesto
+  notes           String?
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  customerId      String?
+  customer        Customer?       @relation(fields: [customerId], references: [id])
+  convertedToSaleId String?       // Si se convirtió, link a la factura generada
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  items           QuotationItem[]
+
+  @@index([status])
+  @@index([customerId])
+}
+
+model QuotationItem {
+  id           String  @id @default(uuid())
+  quantity     Int
+  priceUsd     Float?  // Precio unitario en USD al momento del presupuesto
+  discount     Float   @default(0) // Descuento por línea en USD
+  subtotal     Float   // (quantity * price) - discount
+  taxRate      Float   @default(16.0)
+  taxAmount    Float
+  taxBreakdown String? // JSON con desglose: [{"name":"IVA 16%","rate":16,"amount":1.28}]
+  total        Float   // subtotal + taxAmount
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  quotationId  String
+  quotation    Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+// ─── Shift Config (Configuración de Turnos) ──────────────────
+// Define turnos nominales: nombre, días de la semana, horario.
+
+model ShiftConfig {
+  id        String   @id @default(uuid())
+  name      String   // "Turno Mañana", "Turno Tarde", etc.
+  days      String   // JSON array de números: "[1,2,3,4,5]" (1=lun, 7=dom)
+  startTime String   // "08:00"
+  endTime   String   // "14:00"
+  order     Int      @default(0)  // Orden de visualización
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registers CashRegister[]
 }
 
 // ─── Cash Register (Arqueo de Caja) ──────────────────────────
@@ -220,16 +305,23 @@ enum CashMovementType {
 }
 
 model CashRegister {
-  id          String   @id @default(uuid())
-  date        DateTime @default(now())
-  openingBalance Float @default(0) // Saldo inicial
-  closingBalance Float? // Saldo al cierre
-  closedAt    DateTime?
-  closedById  String?
-  closedBy    User?    @relation(fields: [closedById], references: [id])
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  openedAt       DateTime           // Fecha/hora de apertura (ingresada por el usuario)
+  openingBalance Float    @default(0)
+  closingBalance Float?
+  closedAt       DateTime?          // Fecha/hora de cierre (ingresada por el usuario)
+  closedById     String?
+  closedBy       User?    @relation("ClosedRegister", fields: [closedById], references: [id])
+  openedById     String?
+  openedBy       User?    @relation("OpenedRegister", fields: [openedById], references: [id])
+  shiftConfigId  String?
+  shiftConfig    ShiftConfig? @relation(fields: [shiftConfigId], references: [id])
 
   movements CashMovement[]
+  sales     Sale[]
+
+  @@index([openedById])
+  @@index([shiftConfigId])
 }
 
 model CashMovement {
@@ -285,8 +377,9 @@ model AppConfig {
   taxRateDefault    Float   @default(16.0)
   lowStockThreshold Int     @default(10)
   darkMode          Boolean @default(false)
-  inactivityTimeout Int     @default(600)
-  updatedAt         DateTime @updatedAt
+  inactivityTimeout     Int     @default(600)
+  quotationValidityDays Int     @default(30)
+  updatedAt             DateTime @updatedAt
 }
 
 // ─── USD Rate History ───────────────────────────────────────
@@ -299,4 +392,90 @@ model UsdRate {
   createdById String?
   createdBy   User?    @relation(fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
+}
+
+// ─── Invoice Document (Factura Congelada) ───────────────────
+// Copia inalterable de cada factura emitida. Los campos de moneda
+// y región son dinámicos según el country plugin activo.
+// El snapshot JSON contiene todo el detalle: items, pagos, impuestos.
+// El pluginSnapshot contiene datos específicos del país (SENIAT, DIAN, etc.)
+
+model InvoiceDocument {
+  id              String   @id @default(uuid())
+  saleId          String   @unique
+  sale            Sale     @relation(fields: [saleId], references: [id])
+
+  // ─── Identificación ────────────────────────────────────────
+  documentType    String                     // FACTURA | TICKET | PRESUPUESTO
+  receiptNumber   Int
+  series          String?                    // Prefijo: "F-", "A-", "001-001-"
+  issuedAt        DateTime                   // Fecha de emisión
+  dueDate         DateTime?                  // Vencimiento (crédito)
+
+  // ─── Origen (caja / sucursal) ──────────────────────────────
+  posCode         String?                    // "CAJA-01"
+  branchCode      String?                    // "MATRIZ", "SUC-01"
+  terminalId      String?                    // Hostname / machineId
+
+  // ─── Operativo ─────────────────────────────────────────────
+  shiftId         String?
+  shiftName       String?                    // Congelado: "Mañana"
+  sellerId        String?
+  sellerName      String?                    // Congelado
+  orderRef        String?                    // Pedido externo
+
+  // ─── Cliente (congelado) ───────────────────────────────────
+  customerName        String?
+  customerTaxId       String?
+  customerPersonType  String?     // V, E, J, G, P (del RIF)
+  customerPersonSubtype String?   // contribuyente, no_contribuyente, especial
+  customerAddress     String?
+  customerPhone       String?
+  customerEmail       String?
+
+  // ─── Monetario (dinámico por plugin) ───────────────────────
+  currencyCode    String   @default("VES")
+  currencySymbol  String   @default("Bs.")
+  exchangeRate    Float?
+  exchangeSource  String?                    // "bcv", "trm", "paralelo"
+  subtotal        Float
+  discount        Float    @default(0)
+  taxTotal        Float
+  total           Float
+  totalUsd        Float?
+
+  // ─── Impuestos desglosados ─────────────────────────────────
+  taxBreakdown    String?                    // JSON
+
+  // ─── Snapshots (JSON) ──────────────────────────────────────
+  itemsSnapshot   String                     // JSON array — productos
+  paymentsSnapshot String                    // JSON array — pagos
+
+  // ─── Texto libre ───────────────────────────────────────────
+  motivo          String?
+  notes           String?
+  customerNotes   String?
+
+  // ─── Plugin data (country plugin activo) ───────────────────
+  pluginId        String?                    // "plugin-ve", "plugin-co"
+  pluginSnapshot  String?                    // JSON con datos específicos
+
+  // ─── Formatos exportados ───────────────────────────────────
+  pdfPath         String?
+  xmlContent      String?
+  externalStatus  String?                    // null | "sent" | "accepted" | "rejected"
+  externalId      String?                    // CUFE, CAE, UUID SAT
+
+  // ─── Trazabilidad ──────────────────────────────────────────
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([saleId])
+  @@index([receiptNumber])
+  @@index([issuedAt])
+  @@index([customerTaxId])
+  @@index([posCode])
+  @@index([shiftId])
 }

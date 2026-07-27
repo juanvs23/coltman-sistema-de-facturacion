@@ -34,18 +34,9 @@ POS and invoicing system for Venezuelan SMEs. Desktop application built with Ele
   - `pos/`, `inventory/`, `invoices/`, `cash-register/`, `reports/`, `admin/`, `auth/`, `plugins/`
   - Each domain follows Atomic Design: atoms → molecules → organisms → templates → pages
 
-- **Plugin System**: Plugins implement plugin-specific domain interfaces and are loaded dynamically from `plugins/` directory at runtime.
+- **Plugin System**: AppKernel singleton with 4 registries (PluginRegistry, HookBus, UiRegistry, DataModelRegistry). Plugins implement ICountryPlugin and are auto-discovered from `plugins/` directory.
 
-## Design System
-
-Based on Cal.com design tokens (via getdesign.md) with these adaptations:
-- **Dark mode** toggle added with full dark palette
-- **Touch targets** increased to 44px minimum for POS use
-- **POS-specific components**: keypad, product search, cart, payment modal, cash summary
-- **Keyboard-first**: F2/F4/F6 shortcuts for POS operations
-- **Typography**: Inter (body), Cal Sans (display), JetBrains Mono (code/receipts)
-
-## Open-Core Architecture
+### Open-Core Architecture
 
 El proyecto es **open-core**:
 - **Core POS** (`sistema-facturacion/`): público, licencia MIT
@@ -55,6 +46,21 @@ El proyecto es **open-core**:
 - **Plugins premium** (fiscal printer, SENIAT, restaurant): privados, distribuidos bajo licencia
 
 El License Manager es auditable. La seguridad está en el backend de licencias (firma asimétrica), no en esconder el código.
+
+### Freemium Model
+
+- **Free tier**: Basic POS, inventory, cash register, single terminal
+- **Paid upgrades**: Fiscal printer, restaurant module, server-mode multi-terminal, SENIAT electronic invoicing
+- Feature gating implemented via license key validation in plugin system
+
+## Design System
+
+Based on Cal.com design tokens (via getdesign.md) with these adaptations:
+- **Dark mode** toggle added with full dark palette
+- **Touch targets** increased to 44px minimum for POS use
+- **POS-specific components**: keypad, product search, cart, payment modal, cash summary
+- **Keyboard-first**: F2/F4/F6 shortcuts for POS operations
+- **Typography**: Inter (body), Cal Sans (display), JetBrains Mono (code/receipts)
 
 ## Key Design Decisions
 
@@ -67,20 +73,17 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 | Atomic Design + Screaming | Modular, domain-isolated, plugin-friendly frontend |
 | Open-core (public MIT + private plugins) | Community contributions + monetization of complex features |
 
-## Freemium Model
-
-- **Free tier**: Basic POS, inventory, cash register, single terminal
-- **Paid upgrades**: Fiscal printer, restaurant module, server-mode multi-terminal, SENIAT electronic invoicing
-- Feature gating implemented via license key validation in plugin system
-
 ## Venezuelan-Specific Features
 
 - IVA (16%) calculation with retention support
 - Official USD rate from BCV / EnParaleloVzla
 - Fiscal printer support (Bixolon, Epson, Sharp, SAM4s)
 - SENIAT factura electrónica (Phase 2)
-- RIF/tax ID validation
-- Currency display: Bs. + USD parallel
+- RIF/tax ID validation with person type extraction (V/E/J/G/P)
+- Person subtypes: contribuyente, no_contribuyente, especial, independiente, dependiente
+- Legal types for juridical persons: CA, SRL, SC, Fundación, Asociación
+- Payment bank selector: 16 Venezuelan banks (Banesco, Mercantil, Provincial, etc.)
+- Currency display: Bs. + USD parallel with automatic conversion
 
 ## Non-Negotiables
 
@@ -97,123 +100,23 @@ El License Manager es auditable. La seguridad está en el backend de licencias (
 - **Commits**: convencionales (feat/fix/chore/docs), en español o inglés
 - **TDD**: tests antes que implementación
 
-## Current State (v0.11.0)
+## Current State
 
-**Branch**: `dev`
-**Date**: 2026-07-21
+| Field | Value |
+|---|---|
+| **Version** | v0.12.0 |
+| **Branch** | `dev` |
+| **Tests** | 148+4 flaky (25 files) |
+| **Fase 1** | ✅ MVP Core completa |
+| **Plugin Kernel Architecture** | ✅ PR 1/2/3 completados |
+| **Fase 2** | ✅ Cabos sueltos completa |
+| **Presupuestos** | ✅ Sistema de cotizaciones con modelo propio + conversión a factura |
+| **ShiftConfig** | ✅ Turnos configurables por nombre, días y horario |
+| **InvoiceDocument** | ✅ Factura congelada con 40+ campos, multi-moneda, plugin-ready |
+| **Personas VE** | ✅ Tipos V/E/J/G/P con subtipos y legalType para jurídicas |
+| **PaymentEntry.bank** | ✅ Banco de origen para tarjetas y transferencias |
+| **Fase 3** | ⬜ Monetización (Producto) — pendiente |
+| **Fase 4** | ⬜ Lanzamiento — pendiente |
 
-### Fase 1 — COMPLETA
-- [x] 1.0 Core multi-país + plugin-ve 🇻🇪
-- [x] 1.1 Factura vs Ticket + Empresa
-- [x] 1.2 Rediseño UI del POS
-- [x] 1.3 Descuentos por línea y total
-- [x] 1.4 Historial de ventas + anulación
-- [x] 1.5 Arqueo de caja
-- [x] 1.6 Reportes (diario, por producto, por usuario, libro IVA)
-
-### Completed
-- [x] Project structure and tooling (Electron + TS + React + Prisma + SQLite)
-- [x] Prisma schema with all domain models + Tax model + ProductTax join table + Customer (pending)
-- [x] Core ports/interfaces for all domains
-- [x] Auth: login handler real (Prisma + bcrypt) + dev mock for browser
-- [x] Authentication UI (login page with dark mode)
-- [x] POS shell layout (sidebar + top nav + iconos Icomoon)
-- [x] Design system (Cal.com + dark mode + POS adaptations)
-- [x] TDD config (Vitest + React Testing Library) — 39 tests
-- [x] SDD initialization + skill registry
-- [x] Documentation (README, CHANGELOG, context, roadmap, PLAN_ACCION)
-- [x] Dependencies installed (npm install)
-- [x] electron-vite config con entry points explícitos
-- [x] Base de datos SQLite creada y seed ejecutado (3 users, 3 taxes, 22 products)
-- [x] Tipografía Inter self-hosted (@fontsource)
-- [x] CSP y favicon arreglados
-- [x] **Router de navegación** con sidebar activo y 6 vistas
-- [x] **Vista Configuración** con tabs: Usuarios, Impuestos, Tasa USD, Seguridad, Empresa, Fiscal
-- [x] **CRUD de usuarios** (crear, editar, activar/desactivar)
-- [x] **CRUD de impuestos** (crear, editar, activar/desactivar) ✅
-- [x] **CRUD de categorías** (dentro de Inventario)
-- [x] **CRUD de productos** con selección múltiple de impuestos ✅
-- [x] **Pantalla POS** actual con búsqueda + ticket + cobro
-- [x] **Tasa USD** configurable desde Settings con persistencia en DB
-- [x] **PrismaClient singleton** compartido
-- [x] **Sales:create** handler con transacción, correlativo, stock, impuestos múltiples, taxBreakdown
-
-### Completed (v0.3.0)
-- [x] **Core multi-país**: ICountryPlugin, Customer.taxId genérico, AppConfig.country
-- [x] **plugin-ve 🇻🇪** gratis bundled: RIF, Bs./USD, métodos VE, leyendas SENIAT
-- [x] **plugin-co 🇨🇴** placeholder: NIT, COP, métodos CO (Nequi, DaviPlata)
-- [x] **Panel de Plugins**: PluginsTab en Settings con toggle + reload al cambiar país
-- [x] **PluginStateStore**: JSON persistente (localStorage en dev, archivo en Electron)
-- [x] **useCountry() hook**: reactivo al país activo
-- [x] **45 tests**
-
-### Completed (v0.4.0 — Fase 1.1)
-- [x] **Factura vs Ticket**: toggle visual en TopBar, DocumentType enum en Sale
-- [x] **Customer checkout**: búsqueda rápida de cliente en modo Factura (RIF + nombre)
-- [x] **Validación backend**: sales:create rechaza FACTURA sin customerId
-- [x] **Recibo**: distingue FACTURA (cliente + leyenda) de TICKET (consumidor final)
-- [x] **Pestaña Empresa**: CompanyConfig (razón social, RIF, dirección, teléfono, email)
-- [x] **Migración**: CompanyConfig creado, campos migrados desde FiscalConfig
-- [x] **getReceiptFooter(type)**: pie de recibo por tipo de documento
-
-### Completed (v0.5.0 — Fase 1.2)
-- [x] **Rediseño POS**: layout profesional con barcode-first
-- [x] **BarcodeInput**: input grande con autofocus permanente, Enter para agregar producto
-- [x] **ShortcutBar**: barra de atajos F1-F9 visible
-- [x] **N° factura/ticket visible**: correlativo en TopBar durante la transacción
-- [x] **Tasa USD fija**: en el encabezado (TopBar)
-- [x] **getNextReceiptNumber**: handler IPC para preview de correlativo
-
-### Completed (v0.6.0 — Fase 1.3)
-- [x] **Descuento por línea**: porcentaje en cada producto del carrito, aplicado antes de IVA
-- [x] **Descuento global**: monto fijo en pantalla de cobro, aplicado después de IVA
-- [x] **Notas y referencias**: campo de texto libre en PaymentModal, visible en recibo
-- [x] **calcCartTotals**: helper compartido eliminando duplicación CartSummary/PaymentModal
-- [x] **F5 (Descuento) y F9 (Nota)** habilitados en ShortcutBar
-
-### Completed (v0.7.0 — Fase 1.4)
-- [x] **PrismaSaleRepository**: repositorio hexagonal para ventas
-- [x] **Historial de ventas**: tabla con filtros (fecha, método de pago)
-- [x] **Detalle de factura**: modal con productos, totales, cliente, notas
-- [x] **Anulación de ventas**: con motivo, control de usuario, restauración de stock
-
-### Completed (v0.8.0 — Fase 1.5)
-- [x] **Apertura de caja**: modal con monto inicial
-- [x] **Movimientos**: ingresos extra y gastos registrables
-- [x] **Cierre de caja**: conteo de efectivo, diferencia vs esperado
-
-### Completed (v0.9.0 — Fase 1.6)
-- [x] **Ventas del día**: totales por método de pago, ticket promedio
-- [x] **Ventas por producto**: ranking top 20, cantidad y total
-- [x] **Ventas por usuario**: ranking por vendedor
-- [x] **Libro IVA**: facturas del mes, base imponible, IVA, total (para declaración SENIAT)
-- [x] **62 tests**
-
-### Fase 1 — COMPLETA 🎉
-Todos los módulos core del MVP están implementados. El sistema permite:
-- POS con barcode, descuentos, factura/ticket, arqueo de caja
-- Inventario con categorías, impuestos múltiples, USD primario
-- Historial de ventas con anulación y detalle
-- Reportes diarios, por producto, por usuario, libro IVA
-- Configuración multi-país con plugin-ve y plugin-co
-- Empresa, usuarios, impuestos, tasa USD
-
-### Completed (v0.10.0 — Plugin Kernel Architecture)
-
-- [x] **SDD completo**: proposal, spec (4 dominios), design, tasks en openspec/ + Engram
-- [x] **PR 1 — Kernel**: AppKernel singleton, PluginRegistry, HookBus (actions+filters con prioridad), UiRegistry, DataModelRegistry — 52 tests nuevos
-- [x] **PR 2 — Wiring**: PluginLoader refactorizado, kernel en main.ts/handlers, VenezuelaPlugin migrado a plugin real en `plugins/plugin-ve/`
-- [x] **Core neutro**: sin defaults venezolanos hardcodeados, todo el país se resuelve vía `AppKernel.getCountryPlugin()`
-- [x] **PR 3 — UI Bridge**: PluginProvider, PluginSidebarItems, PluginSettingsTabs, useCountry hook, reemplazo de `Bs.`/`RIF`/`SENIAT` hardcodeados por datos dinámicos del country plugin
-- [x] **138 tests** pasando (24 files)
-
-### Pending (Fase 2 — Cabos Sueltos)
-
-En orden de implementación:
-
-- [x] **2.1 Seguridad (RBAC)**: control de acceso por rol, políticas de contraseña, sesiones, bloqueo por inactividad ✅
-- [x] **2.2 Pestaña Fiscal**: formulario de impresora fiscal, configuración SENIAT ✅
-- [x] **2.3 Multi-método de pago**: pago mixto real en una venta (schema + UI) ✅
-- [ ] **2.4 Documentación de usuario**: manual, guía de instalación, FAQ
-- [ ] **2.5 Build instaladores**: Windows (.exe), Linux (AppImage), Mac (.dmg)
-- [ ] **2.6 Fase 4 SDD — DataModelRegistry.migrate()**: migración de schemas parciales de plugins
+Ver `docs/ROADMAP.md` para detalle de fases, estimaciones y dependencias.
+Ver `CHANGELOG.md` para historial completo de versiones.

@@ -1,11 +1,12 @@
 import { useNavigation, NAV_ITEMS } from '../../shared/hooks/useNavigation'
-import { ImCart, ImBoxAdd, ImFileText2, ImCoinDollar, ImStatsBars, ImWrench } from 'react-icons/im'
+import { ImCart, ImBoxAdd, ImFileText2, ImCoinDollar, ImStatsBars, ImWrench, ImCopy } from 'react-icons/im'
 import type { ViewId } from '../../shared/hooks/useNavigation'
 
 const ICON_MAP: Record<ViewId, React.ComponentType<{ className?: string }>> = {
   pos: ImCart,
   inventory: ImBoxAdd,
   invoices: ImFileText2,
+  quotations: ImCopy,
   cash: ImCoinDollar,
   reports: ImStatsBars,
   settings: ImWrench

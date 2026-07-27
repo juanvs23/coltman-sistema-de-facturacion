@@ -13,7 +13,8 @@ interface ReceiptConfirmProps {
 
 export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps): JSX.Element {
   const isFactura = sale.documentType === 'FACTURA'
-  const { currencySymbol } = useCountry()
+  const { currencySymbol, defaultExchangeRate } = useCountry()
+  const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -62,7 +63,7 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
             <span className="text-ink">Total</span>
             <span className="text-ink">{currencySymbol} {sale.total.toFixed(2)}</span>
           </div>
-          {sale.usdRate && sale.usdRate > 0 && (
+          {isDualCurrency && sale.usdRate && sale.usdRate > 0 && (
             <div className="flex justify-between text-caption text-muted-soft">
               <span>USD</span>
               <span>${(sale.total / sale.usdRate).toFixed(2)}</span>

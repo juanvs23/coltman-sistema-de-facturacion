@@ -56,13 +56,56 @@ export interface Tax {
 
 export interface Customer {
   id: string
-  taxId: string  // RIF (VE), NIT (CO), RFC (MX), RUC (EC)
+  taxId: string    // RIF (VE), NIT (CO), RFC (MX), RUC (EC)
   name: string
+  personType: string   // V, E, J, G, P
+  personSubtype: string // contribuyente, no_contribuyente, especial, etc.
+  legalType?: string   // CA, SRL, SC (solo jurídicas)
   address?: string
   phone?: string
   email?: string
   active: boolean
 }
+
+// Helpers para tipos de persona
+export const PERSON_TYPES: Array<{ value: string; label: string; subtypes: Array<{ value: string; label: string }> }> = [
+  { value: 'V', label: 'Natural Venezolano', subtypes: [
+    { value: 'contribuyente', label: 'Contribuyente ordinario' },
+    { value: 'no_contribuyente', label: 'No contribuyente' },
+    { value: 'especial', label: 'Sujeto pasivo especial' },
+    { value: 'independiente', label: 'Trabajador independiente' },
+    { value: 'dependiente', label: 'Empleado / Dependiente' }
+  ]},
+  { value: 'E', label: 'Natural Extranjero', subtypes: [
+    { value: 'contribuyente', label: 'Contribuyente ordinario' },
+    { value: 'no_contribuyente', label: 'No contribuyente' },
+    { value: 'independiente', label: 'Trabajador independiente' }
+  ]},
+  { value: 'J', label: 'Jurídico', subtypes: [
+    { value: 'contribuyente', label: 'Contribuyente ordinario' },
+    { value: 'especial', label: 'Sujeto pasivo especial' },
+    { value: 'no_contribuyente', label: 'No contribuyente' }
+  ]},
+  { value: 'G', label: 'Gobierno', subtypes: [
+    { value: 'gobierno', label: 'Ente gubernamental' }
+  ]},
+  { value: 'P', label: 'Pasaporte', subtypes: [
+    { value: 'no_contribuyente', label: 'No contribuyente' }
+  ]}
+]
+
+export function getPersonSubtypes(personType: string): Array<{ value: string; label: string }> {
+  return PERSON_TYPES.find(pt => pt.value === personType)?.subtypes ?? []
+}
+
+export const LEGAL_TYPES: Array<{ value: string; label: string }> = [
+  { value: 'CA', label: 'Compañía Anónima (C.A.)' },
+  { value: 'SRL', label: 'S.R.L.' },
+  { value: 'SC', label: 'Sociedad Civil' },
+  { value: 'FUNDACION', label: 'Fundación' },
+  { value: 'ASOCIACION', label: 'Asociación Civil' },
+  { value: 'OTRO', label: 'Otro' }
+]
 
 export interface Category {
   id: string
@@ -85,20 +128,45 @@ export interface SaleItem {
   product?: Product
 }
 
-export type DocumentType = 'FACTURA' | 'TICKET'
+export type DocumentType = 'FACTURA' | 'TICKET' | 'PRESUPUESTO'
+export type QuotationStatusType = 'DRAFT' | 'SENT' | 'CONVERTED' | 'EXPIRED' | 'CANCELLED'
 
 export interface PaymentEntry {
   id: string
   method: string
   amountBs: number
   reference?: string
+  bank?: string
 }
 
 export interface PaymentInput {
   method: string
   amountBs: number
   reference?: string
+  bank?: string
 }
+
+// Bancos de Venezuela (ordenados por uso)
+export const VE_BANKS: Array<{ id: string; label: string }> = [
+  { id: 'BANESCO', label: 'Banesco' },
+  { id: 'MERCANTIL', label: 'Mercantil' },
+  { id: 'PROVINCIAL', label: 'BBVA Provincial' },
+  { id: 'VENEZUELA', label: 'Banco de Venezuela' },
+  { id: 'NACIONAL_CREDITO', label: 'Banco Nacional de Crédito' },
+  { id: 'EXTERIOR', label: 'Banco Exterior' },
+  { id: 'BOD', label: 'BOD' },
+  { id: 'BANCARIBE', label: 'Bancaribe' },
+  { id: 'BANCO_MICROFINANCIERO', label: 'Banco Microfinanciero' },
+  { id: 'SOFITASA', label: 'Sofitasa' },
+  { id: 'BANPLUS', label: 'Banplus' },
+  { id: 'BANCRECER', label: 'Bancrecer' },
+  { id: '100_BANCO', label: '100% Banco' },
+  { id: 'DEL_SUR', label: 'Banco del Sur' },
+  { id: 'BANCO_AMIGO', label: 'Banco Amigo' },
+  { id: 'MIA', label: 'Mia Banco Digital' },
+  { id: 'OMNIROUTE', label: 'Omniroute' },
+  { id: 'OTRO', label: 'Otro' },
+]
 
 export interface Sale {
   id: string
@@ -121,6 +189,65 @@ export interface Sale {
   cancelledAt?: string
   cancelledById?: string
   cancelledBy?: User
+}
+
+// ─── Quotation Types ──────────────────────────────────────────
+
+export interface QuotationItemData {
+  id: string
+  quantity: number
+  priceUsd?: number
+  discount: number
+  subtotal: number
+  taxRate: number
+  taxAmount: number
+  taxBreakdown?: string
+  total: number
+  productId: string
+  product?: Product
+}
+
+export interface QuotationData {
+  id: string
+  number: number
+  status: QuotationStatusType
+  validUntil: string
+  subtotal: number
+  taxTotal: number
+  discount: number
+  total: number
+  usdRate?: number
+  notes?: string
+  userId: string
+  user?: User
+  customerId?: string
+  customer?: Customer
+  items: QuotationItemData[]
+  convertedToSaleId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateQuotationRequest {
+  items: Array<{
+    productId: string
+    quantity: number
+    priceUsd: number
+    discount?: number
+  }>
+  discount?: number
+  usdRate?: number
+  notes?: string
+  userId: string
+  customerId?: string
+}
+
+export interface QuotationFilters {
+  from?: string
+  to?: string
+  status?: QuotationStatusType
+  customerId?: string
+  limit?: number
 }
 
 export interface SaleFilters {
@@ -162,6 +289,8 @@ export interface CreateSaleRequest {
   notes?: string
   userId: string
   customerId?: string
+  motivo?: string
+  customerNotes?: string
 }
 
 // ─── Company Configuration ───────────────────────────────────
@@ -199,6 +328,40 @@ export interface PluginHookDef {
   description?: string
 }
 
+// ─── Shift Config Types ───────────────────────────────────────
+
+export interface ShiftConfigData {
+  id: string
+  name: string
+  days: string   // JSON array "[1,2,3,4,5]"
+  startTime: string
+  endTime: string
+  order: number
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+const DAY_LABELS: Record<number, string> = { 1: 'Lun', 2: 'Mar', 3: 'Mie', 4: 'Jue', 5: 'Vie', 6: 'Sab', 7: 'Dom' }
+
+export function parseShiftDays(daysJson: string): number[] {
+  try { return JSON.parse(daysJson) as number[] } catch { return [] }
+}
+
+export function formatShiftDays(days: number[]): string {
+  return days.map(d => DAY_LABELS[d] ?? `?`).join(', ')
+}
+
+// ─── Quotation IPC Types ──────────────────────────────────────
+
+export interface QuotationIpcContract {
+  'quotation:create': { request: CreateQuotationRequest; response: QuotationData }
+  'quotation:list': { request: QuotationFilters | void; response: QuotationData[] }
+  'quotation:get': { request: string; response: QuotationData }
+  'quotation:convert-to-sale': { request: string; response: Sale }
+  'quotation:cancel': { request: string; response: QuotationData }
+}
+
 /** Kernel IPC contract — exposed to renderer via preload */
 export interface KernelIpcContract {
   'ui-registry:subscribe': { channel: 'ui-registry:updated'; response: UiRegistryState }
@@ -208,6 +371,15 @@ export interface KernelIpcContract {
 }
 
 /** Country plugin data returned from kernel IPC */
+export interface FiscalAuthorityData {
+  name: string
+  description: string
+  electronicInvoiceLabel: string
+  electronicInvoiceDescription: string
+  autoSendLabel: string
+  autoSendDescription: string
+}
+
 export interface CountryPluginData {
   countryCode: string
   countryName: string
@@ -217,4 +389,6 @@ export interface CountryPluginData {
   paymentMethods: Array<{ id: string; label: string }>
   defaultTaxes: Array<{ name: string; rate: number; description?: string }>
   defaultExchangeRate: number | null
+  fiscalAuthority?: FiscalAuthorityData
+  personTypes?: Array<{ value: string; label: string; subtypes: Array<{ value: string; label: string }> }>
 }

@@ -1,6 +1,6 @@
 import type { IPlugin, PluginManifest, PluginResult } from '@sistema-facturacion/plugin-api'
-import type { ICountryPlugin, TaxIdValidation, PaymentMethod, DefaultTax } from '@sistema-facturacion/plugin-api'
-import { validateRif, formatRif } from './rif'
+import type { ICountryPlugin, TaxIdValidation, PaymentMethod, DefaultTax, FiscalAuthorityConfig } from '@sistema-facturacion/plugin-api'
+import { validateRif, formatRif, getPersonTypes } from './rif'
 import { getReceiptFooter } from './footer'
 
 const manifest: PluginManifest = {
@@ -64,6 +64,21 @@ export default class VenezuelaPlugin implements IPlugin, ICountryPlugin {
 
   getInvoiceNumberFormat?(): { prefix: string; startAt: number } {
     return { prefix: 'F-', startAt: 1 }
+  }
+
+  getPersonTypes(): Array<{ value: string; label: string; subtypes: Array<{ value: string; label: string }> }> {
+    return getPersonTypes()
+  }
+
+  getFiscalAuthorityConfig(): FiscalAuthorityConfig {
+    return {
+      name: 'SENIAT',
+      description: 'Configuracion para facturacion electronica ante el SENIAT.',
+      electronicInvoiceLabel: 'Facturacion electronica SENIAT',
+      electronicInvoiceDescription: 'Habilita el envio automatico de facturas al SENIAT',
+      autoSendLabel: 'Envio automatico',
+      autoSendDescription: 'Envia facturas automaticamente al generarlas'
+    }
   }
 
   async activate(): Promise<PluginResult> {

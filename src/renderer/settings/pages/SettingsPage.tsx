@@ -8,8 +8,9 @@ import UsdRateTab from '../organisms/UsdRateTab'
 import CompanyTab from '../organisms/CompanyTab'
 import SecurityTab from '../organisms/SecurityTab'
 import FiscalTab from '../organisms/FiscalTab'
+import ShiftConfigTab from '../organisms/ShiftConfigTab'
 
-type SettingsTab = 'users' | 'taxes' | 'customers' | 'usd-rate' | 'security' | 'company' | 'fiscal'
+type SettingsTab = 'users' | 'taxes' | 'customers' | 'usd-rate' | 'security' | 'company' | 'fiscal' | 'shifts'
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'users', label: 'Usuarios' },
@@ -17,6 +18,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'customers', label: 'Clientes' },
   { id: 'plugins', label: 'Plugins' },
   { id: 'usd-rate', label: 'Tasa USD' },
+  { id: 'shifts', label: 'Turnos' },
   { id: 'company', label: 'Empresa' },
   { id: 'security', label: 'Seguridad' },
   { id: 'fiscal', label: 'Fiscal' }
@@ -50,6 +52,7 @@ export default function SettingsPage(): JSX.Element {
         {activeTab === 'security' && <SecurityTab />}
         {activeTab === 'company' && <CompanyTab />}
         {activeTab === 'fiscal' && <FiscalTab />}
+        {activeTab === 'shifts' && <ShiftConfigTab />}
       </div>
     </div>
   )

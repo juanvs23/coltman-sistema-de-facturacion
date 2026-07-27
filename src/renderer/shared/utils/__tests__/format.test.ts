@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { formatCurrency } from '../format'
 
 describe('formatCurrency', () => {
-  it('formats with default Bs. symbol', () => {
-    expect(formatCurrency(1234.56)).toBe('Bs. 1234.56')
+  it('formats with default $ symbol', () => {
+    expect(formatCurrency(1234.56)).toBe('$ 1234.56')
   })
 
   it('formats zero', () => {
-    expect(formatCurrency(0)).toBe('Bs. 0.00')
+    expect(formatCurrency(0)).toBe('$ 0.00')
   })
 
   it('formats with custom symbol', () => {
@@ -17,7 +17,7 @@ describe('formatCurrency', () => {
   })
 
   it('rounds to two decimal places', () => {
-    expect(formatCurrency(10.556)).toBe('Bs. 10.56')
-    expect(formatCurrency(10.554)).toBe('Bs. 10.55')
+    expect(formatCurrency(10.556)).toBe('$ 10.56')
+    expect(formatCurrency(10.554)).toBe('$ 10.55')
   })
 })

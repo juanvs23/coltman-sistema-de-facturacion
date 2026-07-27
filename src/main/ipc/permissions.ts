@@ -23,6 +23,7 @@ export const PERMISSIONS: Record<string, readonly string[]> = {
   'sales:list': ROLES.ANY,
   'sales:next-receipt-number': ROLES.ANY,
   'cash:summary': ROLES.ANY,
+  'cashRegister:getActive': ROLES.ANY,
   'reports:daily': ROLES.ANY,
   'reports:by-product': ROLES.ANY,
   'reports:by-user': ROLES.ANY,

@@ -1,7 +1,6 @@
-import type { Product, Customer, DocumentType } from '@shared/types'
+import type { Product, DocumentType } from '@shared/types'
 import CartItem from '../molecules/CartItem'
 import CartSummary from '../molecules/CartSummary'
-import CustomerSearch from '../molecules/CustomerSearch'
 
 export interface CartEntry {
   product: Product
@@ -13,9 +12,7 @@ interface ShoppingCartProps {
   entries: CartEntry[]
   usdRate: number
   documentType: DocumentType
-  selectedCustomer: Customer | null
   globalDiscount: number
-  onCustomerChange: (customer: Customer | null) => void
   onUpdateQuantity: (productId: string, quantity: number) => void
   onUpdateDiscount: (productId: string, discount: number) => void
   onRemove: (productId: string) => void
@@ -24,17 +21,18 @@ interface ShoppingCartProps {
 }
 
 export default function ShoppingCart({
-  entries, usdRate, documentType, selectedCustomer, globalDiscount, onCustomerChange,
+  entries, usdRate, documentType, globalDiscount,
   onUpdateQuantity, onUpdateDiscount, onRemove, onClear, onCheckout
 }: ShoppingCartProps): JSX.Element {
   const isFactura = documentType === 'FACTURA'
+  const isPresupuesto = documentType === 'PRESUPUESTO'
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-hairline bg-surface-card">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <h3 className="text-body-sm font-medium text-ink">
-          {isFactura ? 'Factura' : 'Ticket'} ({entries.length} item{entries.length !== 1 ? 's' : ''})
+          {isFactura ? 'Factura' : isPresupuesto ? 'Presupuesto' : 'Ticket'} ({entries.length} item{entries.length !== 1 ? 's' : ''})
         </h3>
         {entries.length > 0 && (
           <button onClick={onClear}
@@ -43,17 +41,6 @@ export default function ShoppingCart({
           </button>
         )}
       </div>
-
-      {/* Customer search — only in Factura mode */}
-      {isFactura && entries.length > 0 && (
-        <div className="px-4 py-3 border-b border-hairline">
-          <p className="text-caption text-muted mb-2">Cliente</p>
-          <CustomerSearch
-            onSelect={onCustomerChange}
-            selectedCustomer={selectedCustomer}
-          />
-        </div>
-      )}
 
       {/* Empty state */}
       {entries.length === 0 && (
@@ -91,7 +78,7 @@ export default function ShoppingCart({
               className="w-full rounded-lg bg-primary py-3 text-body-sm font-medium text-on-primary
                 transition-opacity hover:opacity-90"
             >
-              Cobrar (F4)
+              {isPresupuesto ? 'Generar Presupuesto' : 'Cobrar (F4)'}
             </button>
           </div>
         </>

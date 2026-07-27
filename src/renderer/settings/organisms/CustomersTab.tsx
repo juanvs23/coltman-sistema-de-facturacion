@@ -1,16 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Customer } from '@shared/types'
+import { PERSON_TYPES, getPersonSubtypes, LEGAL_TYPES } from '@shared/types'
 import { useCountry } from '@renderer/shared/hooks/useCountry'
 
 interface CustomerForm {
-  taxId: string
+  rifPrefix: string
+  rifNumber: string
   name: string
+  personType: string
+  personSubtype: string
+  legalType: string
   address: string
   phone: string
   email: string
 }
 
-const emptyForm: CustomerForm = { taxId: '', name: '', address: '', phone: '', email: '' }
+const emptyForm: CustomerForm = { rifPrefix: 'V', rifNumber: '', name: '', personType: 'V', personSubtype: 'contribuyente', legalType: '', address: '', phone: '', email: '' }
 
 export default function CustomersTab(): JSX.Element {
   const country = useCountry()
@@ -42,7 +47,8 @@ export default function CustomersTab(): JSX.Element {
   const openCreate = () => { setShowCreate(true); setEditing(null); resetForm() }
   const openEdit = (c: Customer) => {
     setEditing(c)
-    setForm({ taxId: c.taxId, name: c.name, address: c.address ?? '', phone: c.phone ?? '', email: c.email ?? '' })
+    const parts = c.taxId.split('-')
+    setForm({ rifPrefix: c.personType || parts[0] || 'V', rifNumber: parts[1] || '', name: c.name, personType: c.personType ?? 'V', personSubtype: c.personSubtype ?? 'contribuyente', legalType: c.legalType ?? '', address: c.address ?? '', phone: c.phone ?? '', email: c.email ?? '' })
     setShowCreate(false)
   }
 
@@ -61,9 +67,13 @@ export default function CustomersTab(): JSX.Element {
 
     setSaving(true)
     try {
+      const fullRif = `${form.rifPrefix}-${form.rifNumber.padStart(8, '0')}`
       if (editing) {
         const res = await window.electronAPI.updateCustomer(editing.id, {
           name: form.name.trim(),
+          personType: form.personType,
+          personSubtype: form.personSubtype,
+          legalType: form.legalType || undefined,
           address: form.address.trim() || undefined,
           phone: form.phone.trim() || undefined,
           email: form.email.trim() || undefined
@@ -72,8 +82,11 @@ export default function CustomersTab(): JSX.Element {
         else setFormError(res.error ?? 'Error al actualizar')
       } else {
         const res = await window.electronAPI.createCustomer({
-          taxId: country.formatTaxId(form.taxId),
+          taxId: country.formatTaxId(fullRif) || fullRif,
           name: form.name.trim(),
+          personType: form.personType,
+          personSubtype: form.personSubtype,
+          legalType: form.legalType || undefined,
           address: form.address.trim() || undefined,
           phone: form.phone.trim() || undefined,
           email: form.email.trim() || undefined
@@ -124,17 +137,42 @@ export default function CustomersTab(): JSX.Element {
           <p className="text-body-sm font-medium text-ink mb-3">Nuevo cliente</p>
           {formError && <div className="mb-3 rounded-md bg-error/10 px-3 py-2 text-body-sm text-error">{formError}</div>}
           <div className="grid grid-cols-2 gap-3">
+            {/* RIF partido */}
             <div className="flex flex-col gap-1">
               <label className="text-caption text-muted">{country.taxIdLabel}</label>
-              <input value={form.taxId} onChange={e => setForm(f => ({ ...f, taxId: e.target.value }))}
-                placeholder="J-12345678-9" autoFocus
-                className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none" />
+              <div className="flex gap-2">
+                <select value={form.rifPrefix} onChange={e => setForm(f => ({ ...f, rifPrefix: e.target.value, personType: e.target.value }))}
+                  className="w-16 shrink-0 rounded-md border border-hairline bg-canvas px-2 py-2 text-body-sm text-ink text-center font-mono font-bold focus:border-primary focus:outline-none">
+                  {PERSON_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.value}</option>)}
+                </select>
+                <input value={form.rifNumber} onChange={e => setForm(f => ({ ...f, rifNumber: e.target.value.replace(/[^0-9]/g, '') }))}
+                  placeholder="12345678" maxLength={8} autoFocus
+                  className="flex-1 rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink font-mono focus:border-primary focus:outline-none" />
+              </div>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-caption text-muted">Nombre / Razón Social</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none" />
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-caption text-muted">Subtipo de contribuyente</label>
+              <select value={form.personSubtype} onChange={e => setForm(f => ({ ...f, personSubtype: e.target.value }))}
+                className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none">
+                <option value="">Seleccione</option>
+                {getPersonSubtypes(form.personType).map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+              </select>
+            </div>
+            {form.personType === 'J' && (
+              <div className="flex flex-col gap-1">
+                <label className="text-caption text-muted">Tipo de sociedad</label>
+                <select value={form.legalType} onChange={e => setForm(f => ({ ...f, legalType: e.target.value }))}
+                  className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none">
+                  <option value="">Seleccione (opcional)</option>
+                  {LEGAL_TYPES.map(lt => <option key={lt.value} value={lt.value}>{lt.label}</option>)}
+                </select>
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <label className="text-caption text-muted">Teléfono</label>
               <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -170,13 +208,39 @@ export default function CustomersTab(): JSX.Element {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-caption text-muted">{country.taxIdLabel}</label>
-              <p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-body-sm text-muted">{editing.taxId}</p>
+              <div className="flex gap-2">
+                <select value={form.rifPrefix} onChange={e => setForm(f => ({ ...f, rifPrefix: e.target.value, personType: e.target.value }))}
+                  className="w-16 shrink-0 rounded-md border border-hairline bg-surface-soft px-2 py-2 text-body-sm text-ink text-center font-mono font-bold focus:border-primary focus:outline-none">
+                  {PERSON_TYPES.map(pt => <option key={pt.value} value={pt.value}>{pt.value}</option>)}
+                </select>
+                <p className="flex-1 rounded-md border border-hairline bg-surface-soft px-3 py-2 text-body-sm text-muted font-mono">
+                  {editing.taxId.split('-')[1] || editing.taxId}
+                </p>
+              </div>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-caption text-muted">Nombre</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none" />
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-caption text-muted">Subtipo de contribuyente</label>
+              <select value={form.personSubtype} onChange={e => setForm(f => ({ ...f, personSubtype: e.target.value }))}
+                className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none">
+                <option value="">Seleccione</option>
+                {getPersonSubtypes(form.personType).map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+              </select>
+            </div>
+            {form.personType === 'J' && (
+              <div className="flex flex-col gap-1">
+                <label className="text-caption text-muted">Tipo de sociedad</label>
+                <select value={form.legalType} onChange={e => setForm(f => ({ ...f, legalType: e.target.value }))}
+                  className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none">
+                  <option value="">Seleccione (opcional)</option>
+                  {LEGAL_TYPES.map(lt => <option key={lt.value} value={lt.value}>{lt.label}</option>)}
+                </select>
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <label className="text-caption text-muted">Teléfono</label>
               <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -220,6 +284,9 @@ export default function CustomersTab(): JSX.Element {
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-caption text-muted">{c.taxId}</span>
                   <span className="text-body-sm font-medium text-ink truncate">{c.name}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${c.personType === 'J' ? 'bg-primary/10 text-primary' : 'bg-surface-strong text-muted'}`}>
+                    {c.personType}
+                  </span>
                 </div>
                 <div className="flex gap-3 text-caption text-muted-soft mt-0.5">
                   {c.phone && <span>{c.phone}</span>}

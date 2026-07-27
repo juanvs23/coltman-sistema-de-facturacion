@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 
-export type ViewId = 'pos' | 'inventory' | 'invoices' | 'cash' | 'reports' | 'settings'
+export type ViewId = 'pos' | 'inventory' | 'invoices' | 'cash' | 'reports' | 'settings' | 'quotations'
 
 export interface NavItem {
   id: ViewId
@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'pos', label: 'Punto de Venta' },
   { id: 'inventory', label: 'Inventario' },
   { id: 'invoices', label: 'Facturación' },
+  { id: 'quotations', label: 'Presupuestos' },
   { id: 'cash', label: 'Caja' },
   { id: 'reports', label: 'Reportes' },
   { id: 'settings', label: 'Configuración' }

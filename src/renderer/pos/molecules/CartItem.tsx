@@ -14,7 +14,8 @@ export default function CartItem({ entry, usdRate, onUpdateQuantity, onUpdateDis
   const lineSubtotalUsd = entry.product.priceUsd * entry.quantity
   const lineDiscount = entry.discount ?? 0
   const discountedUsd = lineSubtotalUsd - lineDiscount
-  const { currencySymbol } = useCountry()
+  const { currencySymbol, defaultExchangeRate } = useCountry()
+  const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
 
   const discountPct = lineSubtotalUsd > 0 ? Math.round((lineDiscount / lineSubtotalUsd) * 100) : 0
 
@@ -25,12 +26,15 @@ export default function CartItem({ entry, usdRate, onUpdateQuantity, onUpdateDis
     onUpdateDiscount(entry.product.id, amount)
   }
 
+  const formatLocal = (usd: number): string => `${currencySymbol} ${(usd * usdRate).toFixed(2)}`
+  const formatUsd = (usd: number): string => `$${usd.toFixed(2)}`
+
   return (
     <div className="flex flex-col border-b border-hairline px-4 py-2 last:border-0">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-body-sm font-medium text-ink truncate">{entry.product.name}</p>
-          <p className="text-caption text-muted-soft">${entry.product.priceUsd.toFixed(2)} c/u</p>
+          <p className="text-caption text-muted-soft">{isDualCurrency ? formatLocal(entry.product.priceUsd) : formatUsd(entry.product.priceUsd)} c/u</p>
         </div>
         <QuantityInput
           value={entry.quantity}
@@ -39,8 +43,14 @@ export default function CartItem({ entry, usdRate, onUpdateQuantity, onUpdateDis
           max={entry.product.type === 'PRODUCT' ? entry.product.stock : 999}
         />
         <div className="text-right w-24">
-          <p className="text-body-sm font-medium text-ink">${discountedUsd.toFixed(2)}</p>
-          <p className="text-caption text-muted-soft">{currencySymbol} {(discountedUsd * usdRate).toFixed(2)}</p>
+          {isDualCurrency ? (
+            <>
+              <p className="text-body-sm font-medium text-ink">{formatLocal(discountedUsd)}</p>
+              <p className="text-caption text-muted-soft">{formatUsd(discountedUsd)} USD</p>
+            </>
+          ) : (
+            <p className="text-body-sm font-medium text-ink">{formatUsd(discountedUsd)}</p>
+          )}
         </div>
         <button
           onClick={() => onRemove(entry.product.id)}
@@ -63,7 +73,7 @@ export default function CartItem({ entry, usdRate, onUpdateQuantity, onUpdateDis
             onChange={e => handleDiscountPercent(e.target.value)}
             className="w-14 rounded border border-hairline bg-canvas px-1 py-0.5 text-caption text-ink text-center focus:border-primary focus:outline-none"
           />
-          <span className="text-caption text-muted-soft">% (−${lineDiscount.toFixed(2)})</span>
+          <span className="text-caption text-muted-soft">% (−{formatUsd(lineDiscount)})</span>
           <button
             onClick={() => onUpdateDiscount(entry.product.id, 0)}
             className="text-caption text-muted-soft hover:text-error ml-auto"

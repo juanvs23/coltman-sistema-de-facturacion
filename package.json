@@ -7,8 +7,9 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "dev": "npm run build:plugins && electron-vite dev",
+    "build": "npm run build:plugins && electron-vite build",
+    "build:plugins": "esbuild plugins/plugin-ve/src/index.ts --bundle --outfile=plugins/plugin-ve/dist/index.js --platform=node --format=esm --external:@sistema-facturacion/plugin-api",
     "preview": "electron-vite preview",
     "lint": "eslint src/ --ext .ts,.tsx",
     "format": "prettier --write src/",
