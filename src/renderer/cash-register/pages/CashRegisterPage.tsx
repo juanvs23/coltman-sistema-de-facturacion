@@ -181,7 +181,7 @@ export default function CashRegisterPage(): JSX.Element {
               Abrir caja
             </button>
           )}
-          {isToday && isOpen && (
+          {isOpen && (
             <>
               <button onClick={() => setShowMovement(true)}
                 className="rounded-md border border-hairline px-4 py-2 text-body-sm text-muted hover:text-ink">
