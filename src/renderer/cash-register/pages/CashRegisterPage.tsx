@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@renderer/shared/hooks/useAuth'
 import { useCountry } from '@renderer/shared/hooks/useCountry'
 import OpenRegisterModal from '../organisms/OpenRegisterModal'
@@ -48,6 +48,7 @@ export default function CashRegisterPage(): JSX.Element {
   const today = new Date()
   const [viewDate, setViewDate] = useState(() => toDateInput(today))
   const isToday = viewDate === toDateInput(today)
+  const autoNavigated = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -59,6 +60,21 @@ export default function CashRegisterPage(): JSX.Element {
         const registers = (raw.registers as CashRegisterData[]) ?? (raw.register ? [raw.register as CashRegisterData] : [])
         setSummary({ registers, sales: (raw.sales ?? []) as CashSummary['sales'] })
         setSelectedShiftIdx(0)
+
+        // If no registers for this date, check if there's an active register
+        // from another date and auto-navigate to it (once per mount)
+        if (registers.length === 0 && !autoNavigated.current) {
+          const activeRes = await window.electronAPI.getActiveCashRegister()
+          if (activeRes.success && activeRes.data) {
+            const activeDate = new Date(activeRes.data.openedAt)
+            const activeDateStr = toDateInput(activeDate)
+            if (activeDateStr !== viewDate) {
+              autoNavigated.current = true
+              setViewDate(activeDateStr)
+              return // load() will re-fire via the viewDate change
+            }
+          }
+        }
       } else {
         setError(res.error ?? 'Error al cargar')
       }
