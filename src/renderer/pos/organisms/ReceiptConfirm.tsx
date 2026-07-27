@@ -1,4 +1,6 @@
-import type { Sale } from '@shared/types'
+import { useState, useEffect } from 'react'
+import type { Sale, CompanyConfig } from '@shared/types'
+import type { ReceiptData, ReceiptLine } from '@plugin-api/contracts/IFiscalPrinter'
 import { useCountry } from '../../shared/hooks/useCountry'
 
 const METHOD_LABELS: Record<string, string> = {
@@ -15,6 +17,86 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
   const isFactura = sale.documentType === 'FACTURA'
   const { currencySymbol, defaultExchangeRate } = useCountry()
   const isDualCurrency = defaultExchangeRate !== null && defaultExchangeRate > 0
+  const [printStatus, setPrintStatus] = useState<'idle' | 'printing' | 'success' | 'error'>('idle')
+  const [company, setCompany] = useState<CompanyConfig | null>(null)
+
+  useEffect(() => {
+    window.electronAPI.getCompanyConfig().then(res => {
+      if (res.success && res.data) setCompany(res.data)
+    }).catch(() => {})
+  }, [])
+
+  const buildReceiptData = (): ReceiptData => {
+    const header: string[] = []
+    if (company?.businessName) header.push(company.businessName)
+    if (company?.taxId) header.push(`${company.taxId}`)
+    if (company?.address) header.push(company.address)
+    if (company?.phone) header.push(`Telf: ${company.phone}`)
+
+    const docLabel = isFactura ? 'FACTURA' : 'TICKET'
+    const lines: ReceiptLine[] = [
+      { type: 'separator', text: '─'.repeat(32) },
+      { type: 'text', text: `${docLabel} N.° ${String(sale.receiptNumber).padStart(5, '0')}` },
+      { type: 'text', text: new Date(sale.createdAt ?? Date.now()).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
+    ]
+
+    if (sale.customer) {
+      lines.push({ type: 'text', text: `Cliente: ${sale.customer.name}` })
+      lines.push({ type: 'text', text: `RIF: ${sale.customer.taxId}` })
+    } else {
+      lines.push({ type: 'text', text: 'CONSUMIDOR FINAL' })
+    }
+
+    lines.push({ type: 'separator', text: '─'.repeat(32) })
+    lines.push({ type: 'text', text: 'CANT  DESCRIPCION       PRECIO' })
+
+    for (const item of sale.items ?? []) {
+      const name = item.product?.name ?? 'Producto'
+      const qty = String(item.quantity).padStart(3)
+      const price = currencySymbol + ' ' + (item.subtotal ?? 0).toFixed(2)
+      const desc = name.length > 18 ? name.slice(0, 16) + '..' : name.padEnd(18)
+      lines.push({ type: 'item', text: `${qty}  ${desc} ${price}`, quantity: item.quantity, price: item.subtotal })
+    }
+
+    lines.push({ type: 'separator', text: '─'.repeat(32) })
+    lines.push({ type: 'text', text: `Subtotal:  ${currencySymbol} ${sale.subtotal.toFixed(2).padStart(10)}` })
+    if (sale.discount > 0) {
+      lines.push({ type: 'text', text: `Descuento: ${currencySymbol} ${sale.discount.toFixed(2).padStart(10)}` })
+    }
+    lines.push({ type: 'text', text: `IVA (${sale.taxRate ?? 16}%): ${currencySymbol} ${sale.taxTotal.toFixed(2).padStart(8)}` })
+    lines.push({ type: 'total', text: `TOTAL:     ${currencySymbol} ${sale.total.toFixed(2).padStart(10)}`, fontSize: 'large' })
+
+    if (isDualCurrency && sale.usdRate && sale.usdRate > 0) {
+      lines.push({ type: 'text', text: `USD (${sale.usdRate.toFixed(2)}): $${(sale.total / sale.usdRate).toFixed(2)}`.padStart(32) })
+    }
+
+    if (sale.payments && sale.payments.length > 0) {
+      lines.push({ type: 'separator', text: '─'.repeat(32) })
+      for (const p of sale.payments) {
+        lines.push({ type: 'text', text: `${METHOD_LABELS[p.method] ?? p.method}: ${currencySymbol} ${p.amountBs.toFixed(2)}` })
+      }
+    }
+
+    const footer: string[] = ['Gracias por su compra']
+    if (company?.businessName) footer.unshift(company.businessName)
+
+    return { header, lines, footer }
+  }
+
+  const handlePrint = async (): Promise<void> => {
+    setPrintStatus('printing')
+    try {
+      const receiptData = buildReceiptData()
+      const res = await window.electronAPI.printReceipt(receiptData)
+      if (res.success) {
+        setPrintStatus('success')
+      } else {
+        setPrintStatus('error')
+      }
+    } catch {
+      setPrintStatus('error')
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -87,13 +169,31 @@ export default function ReceiptConfirm({ sale, onNewSale }: ReceiptConfirmProps)
           )}
         </div>
 
-        <button
-          onClick={onNewSale}
-          className="w-full rounded-lg bg-primary py-3 text-body-sm font-medium text-on-primary
-            transition-opacity hover:opacity-90"
-        >
-          Nueva venta
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrint}
+            disabled={printStatus === 'printing'}
+            className={`flex-1 rounded-lg py-3 text-body-sm font-medium transition-colors ${
+              printStatus === 'success'
+                ? 'bg-success/10 text-success'
+                : printStatus === 'error'
+                ? 'bg-error/10 text-error'
+                : 'border border-hairline text-muted hover:text-ink hover:bg-surface'
+            } disabled:opacity-50`}
+          >
+            {printStatus === 'printing' ? 'Imprimiendo...' :
+             printStatus === 'success' ? 'Impreso ✓' :
+             printStatus === 'error' ? 'Error al imprimir' :
+             'Imprimir'}
+          </button>
+          <button
+            onClick={onNewSale}
+            className="flex-1 rounded-lg bg-primary py-3 text-body-sm font-medium text-on-primary
+              transition-opacity hover:opacity-90"
+          >
+            Nueva venta
+          </button>
+        </div>
       </div>
     </div>
   )
