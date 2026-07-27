@@ -302,8 +302,11 @@ if (!window.electronAPI) {
     },
     getCountryConfig: async () => ({ success: true, data: { country: '' } }),
     updateConfig: async (data) => ({ success: true, data }),
-    testPrinter: async () => ({ success: false, error: 'No implementado en modo browser' }),
-    printReceipt: async () => ({ success: false, error: 'No implementado en modo browser' }),
+    testPrinter: async () => ({ success: false, error: 'PLUGIN_NOT_AVAILABLE' }),
+    printReceipt: async () => ({ success: false, error: 'PLUGIN_NOT_AVAILABLE' }),
+    getPrinterStatus: async () => ({ success: false, error: 'PLUGIN_NOT_AVAILABLE' }),
+    openDrawer: async () => ({ success: false, error: 'PLUGIN_NOT_AVAILABLE' }),
+    checkPrinterLicense: async () => ({ success: true, data: { valid: false, message: 'Plugin fiscal no instalado' } }),
     getFiscalConfig: async () => ({ success: true, data: { printerType: 'bixolon', printerPort: 'COM1', printerEnabled: false, seniatEnabled: false, autoSendSeniat: false } }),
     updateFiscalConfig: async (data) => ({ success: true, data }),
     // Users

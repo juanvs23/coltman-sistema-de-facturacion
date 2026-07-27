@@ -82,6 +82,9 @@ interface ElectronAPI {
   // Printer
   testPrinter: () => Promise<IpcResponse>
   printReceipt: (data: unknown) => Promise<IpcResponse>
+  getPrinterStatus: () => Promise<IpcResponse<{ online: boolean; paperOut: boolean; drawerOpen: boolean }>>
+  openDrawer: () => Promise<IpcResponse>
+  checkPrinterLicense: () => Promise<IpcResponse<{ valid: boolean; message: string }>>
 
   // Fiscal
   getFiscalConfig: () => Promise<IpcResponse<{ printerType: string; printerPort: string; printerEnabled: boolean; seniatEnabled: boolean; autoSendSeniat: boolean }>>
