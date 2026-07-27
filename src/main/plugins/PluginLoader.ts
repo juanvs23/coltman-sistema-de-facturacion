@@ -4,6 +4,7 @@ import { app } from 'electron'
 import type { IPlugin } from '@plugin-api/contracts/IPlugin'
 import type { PluginInfo, PluginResult, PluginManifest } from '@plugin-api/types'
 import type { ICountryPlugin } from '@plugin-api/contracts/ICountryPlugin'
+import { isFiscalPrinterPlugin } from './isFiscalPrinterPlugin'
 import { loadPluginManifest } from './PluginManifest'
 import { PluginStateStore } from './PluginStateStore'
 import type { LicenseManager } from '../core/license/LicenseManager'
@@ -80,6 +81,9 @@ export class PluginLoader {
 
           // Detect country plugins and register them with the kernel
           this.tryRegisterCountryPlugin(plugin)
+
+          // Detect fiscal printer plugins via duck-typing
+          this.tryRegisterFiscalPrinter(plugin)
         } else {
           console.warn(`Plugin "${id}" failed to activate: ${result.error}`)
         }
@@ -156,6 +160,7 @@ export class PluginLoader {
 
       this.kernel.pluginRegistryInternal.activate(manifest.id)
       this.tryRegisterCountryPlugin(plugin)
+      this.tryRegisterFiscalPrinter(plugin)
 
       return {
         success: true,
@@ -203,6 +208,7 @@ export class PluginLoader {
         }
         this.kernel.pluginRegistryInternal.activate(id)
         this.tryRegisterCountryPlugin(plugin)
+        this.tryRegisterFiscalPrinter(plugin)
       } catch {
         this.stateStore.save(id, { ...entry, active: false })
         return { success: false, error: 'Error al activar el plugin' }
@@ -211,6 +217,7 @@ export class PluginLoader {
       await plugin.deactivate()
       this.kernel.pluginRegistryInternal.deactivate(id)
       this.kernel.unregisterCountryPlugin(id)
+      this.kernel.unregisterFiscalPrinter(id)
     }
     return { success: true, data: { active: entry.active } }
   }
@@ -241,6 +248,24 @@ export class PluginLoader {
       this.kernel.registerCountryPlugin(plugin.manifest.id, code)
       this.kernel.registerCountryPluginInstance(plugin.manifest.id, countryPlugin)
       console.log(`[PluginLoader] Registered country plugin "${plugin.manifest.id}" for ${code}`)
+    }
+  }
+
+  /**
+   * Check if a plugin instance implements IFiscalPrinter via duck-typing
+   * and register it with the kernel if it does.
+   *
+   * Detection is based on:
+   *   - `type` property (FiscalPrinterType)
+   *   - `testConnection` method (function)
+   */
+  private tryRegisterFiscalPrinter(plugin: IPlugin): void {
+    if (isFiscalPrinterPlugin(plugin)) {
+      this.kernel.registerFiscalPrinter(plugin.manifest.id)
+      this.kernel.registerFiscalPrinterInstance(plugin.manifest.id, plugin)
+      console.log(
+        `[PluginLoader] Registered fiscal printer plugin "${plugin.manifest.id}" (${plugin.type})`
+      )
     }
   }
 

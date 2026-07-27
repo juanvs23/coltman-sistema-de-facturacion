@@ -1,6 +1,18 @@
 import type { PluginResult } from '../types'
 
 /**
+ * Fiscal printer error codes for standardized error handling.
+ *
+ * Used by the IPC layer and UI to map plugin errors to
+ * human-readable Spanish messages.
+ */
+export type FiscalPrinterErrorCode =
+  | 'PRINTER_NOT_FOUND'
+  | 'PAPER_OUT'
+  | 'PRINT_FAILED'
+  | 'LICENSE_REQUIRED'
+
+/**
  * Fiscal printer types supported by the system.
  */
 export type FiscalPrinterType = 'bixolon' | 'epson' | 'sharp' | 'sam4s'
@@ -55,6 +67,13 @@ export interface IFiscalPrinter {
    * Print a sales receipt.
    */
   printReceipt(data: ReceiptData): Promise<PluginResult>
+
+  /**
+   * Print a fiscal invoice with header and footer.
+   * Required for fiscal compliance in jurisdictions that mandate
+   * invoice printing (separate from simple receipt).
+   */
+  printInvoice(data: ReceiptData): Promise<PluginResult>
 
   /**
    * Open the cash drawer (if the printer supports it).

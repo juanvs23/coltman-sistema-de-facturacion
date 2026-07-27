@@ -48,6 +48,7 @@ export type { IPluginDataModel } from './contracts/IPluginDataModel'
 export type {
   IFiscalPrinter,
   FiscalPrinterType,
+  FiscalPrinterErrorCode,
   ReceiptLine,
   ReceiptData
 } from './contracts/IFiscalPrinter'

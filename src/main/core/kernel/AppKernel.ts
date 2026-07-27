@@ -40,6 +40,7 @@ import type { IHookSubscriber } from '@plugin-api/contracts/IHookSubscriber'
 import type { IPluginUI } from '@plugin-api/contracts/IPluginUI'
 import type { IPluginDataModel } from '@plugin-api/contracts/IPluginDataModel'
 import type { ICountryPlugin } from '@plugin-api/contracts/ICountryPlugin'
+import type { IFiscalPrinter } from '@plugin-api/contracts/IFiscalPrinter'
 
 /**
  * Singleton kernel that orchestrates the plugin system.
@@ -70,6 +71,12 @@ export class AppKernel implements IPluginKernel {
 
   /** Map of plugin id → country plugin instance (set by PluginLoader) */
   private _countryPluginInstances: Map<string, ICountryPlugin> = new Map()
+
+  /** Currently registered fiscal printer plugin id (only one at a time) */
+  private _fiscalPrinterPluginId: string | null = null
+
+  /** Currently registered fiscal printer instance */
+  private _fiscalPrinterInstance: IFiscalPrinter | null = null
 
   // ─── IPluginKernel accessors ───────────────────────────────
 
@@ -187,6 +194,52 @@ export class AppKernel implements IPluginKernel {
       }
     }
     this._countryPluginInstances.delete(pluginId)
+  }
+
+  // ─── Fiscal Printer Resolution ─────────────────────────────
+
+  /**
+   * Register a plugin as the fiscal printer handler.
+   * Only one fiscal printer can be registered at a time.
+   * Called by PluginLoader when it discovers a fiscal printer plugin.
+   *
+   * @param pluginId - The plugin's manifest id (e.g. "fiscal-bixolon")
+   */
+  registerFiscalPrinter(pluginId: string): void {
+    this._fiscalPrinterPluginId = pluginId
+  }
+
+  /**
+   * Store a fiscal printer instance for direct access.
+   * Called by PluginLoader after instantiating the plugin.
+   */
+  registerFiscalPrinterInstance(pluginId: string, instance: IFiscalPrinter): void {
+    if (this._fiscalPrinterPluginId === pluginId) {
+      this._fiscalPrinterInstance = instance
+    }
+  }
+
+  /**
+   * Unregister the fiscal printer plugin, clearing instance.
+   * Called by PluginLoader when a plugin is deactivated.
+   */
+  unregisterFiscalPrinter(pluginId: string): void {
+    if (this._fiscalPrinterPluginId === pluginId) {
+      this._fiscalPrinterPluginId = null
+      this._fiscalPrinterInstance = null
+    }
+  }
+
+  /**
+   * Get the active fiscal printer plugin synchronously.
+   * Returns null if no fiscal printer is registered.
+   *
+   * Unlike getCountryPlugin(), this is synchronous because
+   * there is no DB lookup needed — the plugin is either
+   * registered or not.
+   */
+  getFiscalPrinter(): IFiscalPrinter | null {
+    return this._fiscalPrinterInstance
   }
 
   /**

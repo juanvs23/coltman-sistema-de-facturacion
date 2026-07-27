@@ -3,6 +3,7 @@ import { AppKernel } from '../AppKernel'
 import { PluginRegistry } from '../PluginRegistry'
 import { HookBus } from '../HookBus'
 import type { PluginManifest, PluginResult } from '@plugin-api/types'
+import type { IFiscalPrinter, FiscalPrinterType, ReceiptData } from '@plugin-api/contracts/IFiscalPrinter'
 
 const mockManifest: PluginManifest = {
   id: 'test-plugin',
@@ -137,6 +138,49 @@ describe('AppKernel', () => {
       kernel.registerCountryPlugin('plugin-ve', 'VE')
 
       const result = await kernel.getCountryPlugin()
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('getFiscalPrinter', () => {
+    const mockFiscalPrinter: IFiscalPrinter = {
+      type: 'bixolon' as FiscalPrinterType,
+      displayName: 'Bixolon SRP-350',
+      testConnection: vi.fn().mockResolvedValue({ success: true }),
+      printReceipt: vi.fn().mockResolvedValue({ success: true }),
+      printInvoice: vi.fn().mockResolvedValue({ success: true }),
+      openDrawer: vi.fn().mockResolvedValue({ success: true }),
+      getStatus: vi.fn().mockResolvedValue({
+        success: true,
+        data: { online: true, paperOut: false, drawerOpen: false }
+      })
+    }
+
+    it('should return null when no fiscal printer is registered', () => {
+      const result = kernel.getFiscalPrinter()
+      expect(result).toBeNull()
+    })
+
+    it('should return the registered fiscal printer instance', () => {
+      kernel.registerFiscalPrinter('fiscal-bixolon')
+      kernel.registerFiscalPrinterInstance('fiscal-bixolon', mockFiscalPrinter)
+
+      const result = kernel.getFiscalPrinter()
+      expect(result).not.toBeNull()
+      expect(result!.type).toBe('bixolon')
+      expect(result!.displayName).toBe('Bixolon SRP-350')
+    })
+
+    it('should return null after unregistering the fiscal printer', () => {
+      kernel.registerFiscalPrinter('fiscal-bixolon')
+      kernel.registerFiscalPrinterInstance('fiscal-bixolon', mockFiscalPrinter)
+
+      // Verify registered
+      expect(kernel.getFiscalPrinter()).not.toBeNull()
+
+      kernel.unregisterFiscalPrinter('fiscal-bixolon')
+
+      const result = kernel.getFiscalPrinter()
       expect(result).toBeNull()
     })
   })
