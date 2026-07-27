@@ -8,7 +8,10 @@ import type { IProductRepository } from '../core/ports/IProductRepository'
 import type { ICustomerRepository } from '../core/ports/ICustomerRepository'
 import type { ISaleRepository, SaleFilters } from '../core/ports/ISaleRepository'
 import type { AppKernel } from '../core/kernel/AppKernel'
+import type { LicenseManager } from '../core/license/LicenseManager'
 import type { UiRegistryState } from '@shared/types'
+import type { IFiscalPrinter, ReceiptData } from '@plugin-api/contracts/IFiscalPrinter'
+import type { PluginResult } from '@plugin-api/types'
 import { guard, AuthError, validatePassword, invalidatePermissionCache } from './guards'
 import { sessionManager } from './SessionManager'
 
@@ -29,12 +32,110 @@ export function validateSaleInput(input: {
   return { valid: true }
 }
 
+// ─── Fiscal Printer Handler Functions ──────────────────────
+// Extracted as pure functions for testability.
+// Wired to ipcMain.handle() in registerIpcHandlers().
+
+const FISCAL_FEATURE = 'fiscal-printer'
+
+async function checkFiscalLicense(licenseManager: LicenseManager): Promise<PluginResult | null> {
+  const licenseCheck = await licenseManager.isFeatureEnabled(FISCAL_FEATURE)
+  if (!licenseCheck.valid) {
+    return { success: false, error: 'LICENSE_REQUIRED' }
+  }
+  return null
+}
+
+function getFiscalPrinterOrReject(kernel: AppKernel): { printer: IFiscalPrinter } | { error: PluginResult } {
+  const printer = kernel.getFiscalPrinter()
+  if (!printer) {
+    return { error: { success: false, error: 'PRINTER_NOT_FOUND' } }
+  }
+  return { printer }
+}
+
+export async function handlePrinterTest(
+  kernel: AppKernel,
+  licenseManager: LicenseManager,
+): Promise<PluginResult> {
+  const licenseError = await checkFiscalLicense(licenseManager)
+  if (licenseError) return licenseError
+
+  const resolved = getFiscalPrinterOrReject(kernel)
+  if ('error' in resolved) return resolved.error
+
+  return await resolved.printer.testConnection()
+}
+
+export async function handlePrintReceipt(
+  kernel: AppKernel,
+  licenseManager: LicenseManager,
+  data: ReceiptData,
+): Promise<PluginResult> {
+  const licenseError = await checkFiscalLicense(licenseManager)
+  if (licenseError) return licenseError
+
+  const resolved = getFiscalPrinterOrReject(kernel)
+  if ('error' in resolved) return resolved.error
+
+  try {
+    return await resolved.printer.printReceipt(data)
+  } catch {
+    return { success: false, error: 'PRINT_FAILED' }
+  }
+}
+
+export async function handlePrinterStatus(
+  kernel: AppKernel,
+  licenseManager: LicenseManager,
+): Promise<PluginResult<{ online: boolean; paperOut: boolean; drawerOpen: boolean }>> {
+  const licenseError = await checkFiscalLicense(licenseManager)
+  if (licenseError) return licenseError
+
+  const resolved = getFiscalPrinterOrReject(kernel)
+  if ('error' in resolved) return resolved.error
+
+  try {
+    return await resolved.printer.getStatus()
+  } catch {
+    return { success: false, error: 'PRINTER_NOT_FOUND' }
+  }
+}
+
+export async function handleOpenDrawer(
+  kernel: AppKernel,
+  licenseManager: LicenseManager,
+): Promise<PluginResult> {
+  const licenseError = await checkFiscalLicense(licenseManager)
+  if (licenseError) return licenseError
+
+  const resolved = getFiscalPrinterOrReject(kernel)
+  if ('error' in resolved) return resolved.error
+
+  try {
+    return await resolved.printer.openDrawer()
+  } catch {
+    return { success: false, error: 'PRINTER_NOT_FOUND' }
+  }
+}
+
+export async function handleCheckPrinterLicense(
+  licenseManager: LicenseManager,
+): Promise<PluginResult<{ valid: boolean; message: string }>> {
+  const result = await licenseManager.isFeatureEnabled(FISCAL_FEATURE)
+  return {
+    success: true,
+    data: { valid: result.valid, message: result.message },
+  }
+}
+
 /**
  * Registra todos los manejadores IPC.
  */
 export function registerIpcHandlers(deps: {
   pluginLoader: PluginLoader
   kernel: AppKernel
+  licenseManager: LicenseManager
   userRepository?: IUserRepository
   productRepository?: IProductRepository
   customerRepository?: ICustomerRepository
@@ -1040,20 +1141,50 @@ export function registerIpcHandlers(deps: {
   ipcMain.handle('printer:test', async (event) => {
     try {
       await guard(event, 'printer:test')
-      return { success: false, error: 'Not implemented' }
+      return handlePrinterTest(deps.kernel, deps.licenseManager)
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Not implemented' }
+      return { success: false, error: 'PRINT_FAILED' }
     }
   })
 
-  ipcMain.handle('printer:print-receipt', async (event, data) => {
+  ipcMain.handle('printer:print-receipt', async (event, data: ReceiptData) => {
     try {
       await guard(event, 'printer:print-receipt')
-      return { success: false, error: 'Not implemented' }
+      return handlePrintReceipt(deps.kernel, deps.licenseManager, data)
     } catch (error) {
       if (error instanceof AuthError) return { success: false, error: error.message }
-      return { success: false, error: 'Not implemented' }
+      return { success: false, error: 'PRINT_FAILED' }
+    }
+  })
+
+  ipcMain.handle('printer:status', async (event) => {
+    try {
+      await guard(event, 'printer:status')
+      return handlePrinterStatus(deps.kernel, deps.licenseManager)
+    } catch (error) {
+      if (error instanceof AuthError) return { success: false, error: error.message }
+      return { success: false, error: 'PRINTER_NOT_FOUND' }
+    }
+  })
+
+  ipcMain.handle('printer:open-drawer', async (event) => {
+    try {
+      await guard(event, 'printer:open-drawer')
+      return handleOpenDrawer(deps.kernel, deps.licenseManager)
+    } catch (error) {
+      if (error instanceof AuthError) return { success: false, error: error.message }
+      return { success: false, error: 'PRINTER_NOT_FOUND' }
+    }
+  })
+
+  ipcMain.handle('printer:check-license', async (event) => {
+    try {
+      await guard(event)
+      return handleCheckPrinterLicense(deps.licenseManager)
+    } catch (error) {
+      if (error instanceof AuthError) return { success: false, error: error.message }
+      return { success: false, error: 'LICENSE_REQUIRED' }
     }
   })
 

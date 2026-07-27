@@ -59,6 +59,7 @@ app.whenReady().then(async () => {
   registerIpcHandlers({
     pluginLoader,
     kernel,
+    licenseManager,
     userRepository,
     productRepository,
     customerRepository,

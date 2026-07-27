@@ -62,6 +62,9 @@ const electronAPI = {
   // Printer
   testPrinter: () => ipcRenderer.invoke('printer:test'),
   printReceipt: (data: unknown) => ipcRenderer.invoke('printer:print-receipt', data),
+  getPrinterStatus: () => ipcRenderer.invoke('printer:status'),
+  openDrawer: () => ipcRenderer.invoke('printer:open-drawer'),
+  checkPrinterLicense: () => ipcRenderer.invoke('printer:check-license'),
 
   // Fiscal
   getFiscalConfig: () => ipcRenderer.invoke('fiscal:get'),

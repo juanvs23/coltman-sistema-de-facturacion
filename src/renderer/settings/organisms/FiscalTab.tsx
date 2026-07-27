@@ -9,12 +9,25 @@ interface FiscalConfigData {
   autoSendSeniat: boolean
 }
 
+interface PrinterStatus {
+  online: boolean
+  paperOut: boolean
+  drawerOpen: boolean
+}
+
 const PRINTER_TYPES = [
   { value: 'bixolon', label: 'Bixolon' },
   { value: 'epson', label: 'Epson' },
   { value: 'sharp', label: 'Sharp' },
   { value: 'sam4s', label: 'SAM4s' },
 ]
+
+const ERROR_MESSAGES: Record<string, string> = {
+  PRINTER_NOT_FOUND: 'Impresora no encontrada',
+  LICENSE_REQUIRED: 'Se requiere licencia',
+  PRINT_FAILED: 'Error de impresión',
+  PAPER_OUT: 'Sin papel',
+}
 
 export default function FiscalTab(): JSX.Element {
   const country = useCountry()
@@ -23,6 +36,14 @@ export default function FiscalTab(): JSX.Element {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [hasLicense, setHasLicense] = useState(false)
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [testMessage, setTestMessage] = useState('')
+  const [printerStatus, setPrinterStatus] = useState<PrinterStatus>({
+    online: false,
+    paperOut: false,
+    drawerOpen: false,
+  })
   const [form, setForm] = useState({
     printerType: 'bixolon',
     printerPort: 'COM1',
@@ -35,24 +56,46 @@ export default function FiscalTab(): JSX.Element {
     setLoading(true)
     setError('')
     try {
-      const res = await window.electronAPI.getFiscalConfig()
-      if (res.success && res.data) {
-        setConfig(res.data)
+      const [configRes, licenseRes] = await Promise.all([
+        window.electronAPI.getFiscalConfig(),
+        window.electronAPI.checkPrinterLicense(),
+      ])
+      if (configRes.success && configRes.data) {
+        setConfig(configRes.data)
         setForm({
-          printerType: res.data.printerType ?? 'bixolon',
-          printerPort: res.data.printerPort ?? 'COM1',
-          printerEnabled: res.data.printerEnabled ?? false,
-          seniatEnabled: res.data.seniatEnabled ?? false,
-          autoSendSeniat: res.data.autoSendSeniat ?? false,
+          printerType: configRes.data.printerType ?? 'bixolon',
+          printerPort: configRes.data.printerPort ?? 'COM1',
+          printerEnabled: configRes.data.printerEnabled ?? false,
+          seniatEnabled: configRes.data.seniatEnabled ?? false,
+          autoSendSeniat: configRes.data.autoSendSeniat ?? false,
         })
       } else {
-        setError(res.error ?? 'Error al cargar')
+        setError(configRes.error ?? 'Error al cargar')
+      }
+      if (licenseRes.success && licenseRes.data) {
+        setHasLicense(licenseRes.data.valid)
       }
     } catch { setError('Error de conexion') }
     finally { setLoading(false) }
   }, [])
 
+  const loadPrinterStatus = useCallback(async () => {
+    try {
+      const res = await window.electronAPI.getPrinterStatus()
+      if (res.success && res.data) {
+        setPrinterStatus(res.data)
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!config?.printerEnabled) return
+    loadPrinterStatus()
+    const interval = setInterval(loadPrinterStatus, 10000)
+    return () => clearInterval(interval)
+  }, [config?.printerEnabled, loadPrinterStatus])
 
   const handleSave = async () => {
     setSaving(true)
@@ -70,6 +113,27 @@ export default function FiscalTab(): JSX.Element {
     } catch { setError('Error de conexion') }
     finally { setSaving(false) }
   }
+
+  const handleTestConnection = async () => {
+    setTestStatus('testing')
+    setTestMessage('')
+    try {
+      const res = await window.electronAPI.testPrinter()
+      if (res.success) {
+        setTestStatus('success')
+        setTestMessage('Conexión exitosa')
+      } else {
+        setTestStatus('error')
+        setTestMessage(ERROR_MESSAGES[res.error ?? ''] ?? res.error ?? 'Error desconocido')
+      }
+    } catch {
+      setTestStatus('error')
+      setTestMessage('Error de conexion')
+    }
+  }
+
+  const printerToggleDisabled = !hasLicense
+  const testButtonDisabled = !form.printerEnabled || testStatus === 'testing'
 
   if (loading) {
     return <p className="text-body-sm text-muted-soft py-8 text-center">Cargando...</p>
@@ -91,11 +155,27 @@ export default function FiscalTab(): JSX.Element {
               type="button"
               role="switch"
               aria-checked={form.printerEnabled}
-              onClick={() => setForm({ ...form, printerEnabled: !form.printerEnabled })}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${form.printerEnabled ? 'bg-success' : 'bg-surface-strong'}`}
+              aria-label="Habilitar impresora fiscal"
+              onClick={() => !printerToggleDisabled && setForm({ ...form, printerEnabled: !form.printerEnabled })}
+              disabled={printerToggleDisabled}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${form.printerEnabled ? 'bg-success' : 'bg-surface-strong'} ${printerToggleDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${form.printerEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
+          </div>
+
+          {/* Printer Status Indicator */}
+          <div className="flex items-center gap-4 text-caption">
+            <span className={`flex items-center gap-1 ${printerStatus.online ? 'text-success' : 'text-error'}`}>
+              <span className={`inline-block h-2 w-2 rounded-full ${printerStatus.online ? 'bg-success' : 'bg-error'}`} />
+              {printerStatus.online ? 'En línea' : 'Sin conexión'}
+            </span>
+            {printerStatus.paperOut && (
+              <span className="flex items-center gap-1 text-warning">⚠ Sin papel</span>
+            )}
+            {printerStatus.drawerOpen && (
+              <span className="flex items-center gap-1 text-muted">Cajón abierto</span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -123,6 +203,24 @@ export default function FiscalTab(): JSX.Element {
                 className="rounded-md border border-hairline bg-canvas px-3 py-2 text-body-sm text-ink focus:border-primary focus:outline-none disabled:opacity-50"
               />
             </div>
+          </div>
+
+          {/* Test Connection Button */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleTestConnection}
+              disabled={testButtonDisabled}
+              className="rounded-md border border-hairline bg-canvas px-4 py-2 text-body-sm text-ink hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {testStatus === 'testing' ? 'Probando...' : 'Probar conexión'}
+            </button>
+            {testStatus === 'success' && (
+              <span className="text-caption text-success">{testMessage}</span>
+            )}
+            {testStatus === 'error' && (
+              <span className="text-caption text-error">{testMessage}</span>
+            )}
           </div>
         </div>
       </section>
