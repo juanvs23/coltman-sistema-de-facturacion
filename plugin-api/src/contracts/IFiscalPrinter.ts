@@ -8,6 +8,8 @@ import type { PluginResult } from '../types'
  */
 export type FiscalPrinterErrorCode =
   | 'PRINTER_NOT_FOUND'
+  | 'PLUGIN_NOT_AVAILABLE'
+  | 'PLUGIN_NOT_ACTIVE'
   | 'PAPER_OUT'
   | 'PRINT_FAILED'
   | 'LICENSE_REQUIRED'
@@ -92,6 +94,9 @@ export interface IFiscalPrinter {
   /**
    * Print a daily closing report (Z report).
    * Required for fiscal compliance in some jurisdictions.
+   *
+   * @deferred Implement when SENIAT fiscal compliance is built (Fase 3.3).
+   *           Needs totals from the fiscal backend to be meaningful.
    */
   printDailyReport?(totals: {
     salesCount: number

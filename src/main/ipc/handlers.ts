@@ -47,9 +47,12 @@ async function checkFiscalLicense(licenseManager: LicenseManager): Promise<Plugi
 }
 
 function getFiscalPrinterOrReject(kernel: AppKernel): { printer: IFiscalPrinter } | { error: PluginResult } {
+  if (!kernel.hasFiscalPrinterPlugin()) {
+    return { error: { success: false, error: 'PLUGIN_NOT_AVAILABLE' } }
+  }
   const printer = kernel.getFiscalPrinter()
   if (!printer) {
-    return { error: { success: false, error: 'PRINTER_NOT_FOUND' } }
+    return { error: { success: false, error: 'PLUGIN_NOT_ACTIVE' } }
   }
   return { printer }
 }

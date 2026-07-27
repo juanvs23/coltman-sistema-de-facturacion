@@ -243,6 +243,15 @@ export class AppKernel implements IPluginKernel {
   }
 
   /**
+   * Check if a fiscal printer plugin has been registered
+   * (regardless of whether its instance is active).
+   * Used to distinguish PLUGIN_NOT_AVAILABLE from PLUGIN_NOT_ACTIVE.
+   */
+  hasFiscalPrinterPlugin(): boolean {
+    return this._fiscalPrinterPluginId !== null
+  }
+
+  /**
    * Get the active country plugin based on AppConfig.country.
    * Returns null if:
    * - The kernel is not initialized

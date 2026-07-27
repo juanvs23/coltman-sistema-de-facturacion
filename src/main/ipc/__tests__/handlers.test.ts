@@ -21,9 +21,10 @@ function mockLicenseManager(valid: boolean, message?: string): LicenseManager {
   } as unknown as LicenseManager
 }
 
-function mockKernel(printer: IFiscalPrinter | null): AppKernel {
+function mockKernel(printer: IFiscalPrinter | null, hasPlugin = false): AppKernel {
   return {
     getFiscalPrinter: vi.fn().mockReturnValue(printer),
+    hasFiscalPrinterPlugin: vi.fn().mockReturnValue(hasPlugin || printer !== null),
   } as unknown as AppKernel
 }
 
@@ -55,14 +56,24 @@ describe('handlePrinterTest', () => {
     expect(lm.isFeatureEnabled).toHaveBeenCalledWith('fiscal-printer')
   })
 
-  it('rejects with PRINTER_NOT_FOUND when no fiscal printer is registered', async () => {
+  it('rejects with PLUGIN_NOT_AVAILABLE when no fiscal printer is registered', async () => {
     const lm = mockLicenseManager(true)
     const kernel = mockKernel(null)
 
     const result = await handlePrinterTest(kernel, lm)
 
     expect(result.success).toBe(false)
-    expect(result.error).toBe('PRINTER_NOT_FOUND')
+    expect(result.error).toBe('PLUGIN_NOT_AVAILABLE')
+  })
+
+  it('rejects with PLUGIN_NOT_ACTIVE when plugin is registered but instance is not active', async () => {
+    const lm = mockLicenseManager(true)
+    const kernel = mockKernel(null, true)
+
+    const result = await handlePrinterTest(kernel, lm)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('PLUGIN_NOT_ACTIVE')
   })
 
   it('delegates to plugin.testConnection() when license and printer are valid', async () => {
@@ -111,14 +122,24 @@ describe('handlePrintReceipt', () => {
     expect(lm.isFeatureEnabled).toHaveBeenCalledWith('fiscal-printer')
   })
 
-  it('rejects with PRINTER_NOT_FOUND when no fiscal printer is registered', async () => {
+  it('rejects with PLUGIN_NOT_AVAILABLE when no fiscal printer is registered', async () => {
     const lm = mockLicenseManager(true)
     const kernel = mockKernel(null)
 
-    const result = await handlePrintReceipt(kernel, lm, mockReceiptData)
+    const result = await handlePrintReceipt(kernel, lm, { header: [], lines: [], footer: [] })
 
     expect(result.success).toBe(false)
-    expect(result.error).toBe('PRINTER_NOT_FOUND')
+    expect(result.error).toBe('PLUGIN_NOT_AVAILABLE')
+  })
+
+  it('rejects with PLUGIN_NOT_ACTIVE when plugin is registered but instance is not active', async () => {
+    const lm = mockLicenseManager(true)
+    const kernel = mockKernel(null, true)
+
+    const result = await handlePrintReceipt(kernel, lm, { header: [], lines: [], footer: [] })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('PLUGIN_NOT_ACTIVE')
   })
 
   it('delegates to plugin.printReceipt() when license and printer are valid', async () => {
@@ -170,14 +191,24 @@ describe('handlePrinterStatus', () => {
     expect(result.error).toBe('LICENSE_REQUIRED')
   })
 
-  it('rejects with PRINTER_NOT_FOUND when no fiscal printer is registered', async () => {
+  it('rejects with PLUGIN_NOT_AVAILABLE when no fiscal printer is registered', async () => {
     const lm = mockLicenseManager(true)
     const kernel = mockKernel(null)
 
     const result = await handlePrinterStatus(kernel, lm)
 
     expect(result.success).toBe(false)
-    expect(result.error).toBe('PRINTER_NOT_FOUND')
+    expect(result.error).toBe('PLUGIN_NOT_AVAILABLE')
+  })
+
+  it('rejects with PLUGIN_NOT_ACTIVE when plugin is registered but instance is not active', async () => {
+    const lm = mockLicenseManager(true)
+    const kernel = mockKernel(null, true)
+
+    const result = await handlePrinterStatus(kernel, lm)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('PLUGIN_NOT_ACTIVE')
   })
 
   it('returns status data from plugin.getStatus()', async () => {
@@ -217,14 +248,24 @@ describe('handleOpenDrawer', () => {
     expect(result.error).toBe('LICENSE_REQUIRED')
   })
 
-  it('rejects with PRINTER_NOT_FOUND when no fiscal printer is registered', async () => {
+  it('rejects with PLUGIN_NOT_AVAILABLE when no fiscal printer is registered', async () => {
     const lm = mockLicenseManager(true)
     const kernel = mockKernel(null)
 
     const result = await handleOpenDrawer(kernel, lm)
 
     expect(result.success).toBe(false)
-    expect(result.error).toBe('PRINTER_NOT_FOUND')
+    expect(result.error).toBe('PLUGIN_NOT_AVAILABLE')
+  })
+
+  it('rejects with PLUGIN_NOT_ACTIVE when plugin is registered but instance is not active', async () => {
+    const lm = mockLicenseManager(true)
+    const kernel = mockKernel(null, true)
+
+    const result = await handleOpenDrawer(kernel, lm)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('PLUGIN_NOT_ACTIVE')
   })
 
   it('delegates to plugin.openDrawer() when license and printer are valid', async () => {

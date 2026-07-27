@@ -184,4 +184,22 @@ describe('AppKernel', () => {
       expect(result).toBeNull()
     })
   })
+
+  describe('hasFiscalPrinterPlugin', () => {
+    it('should return false when no plugin is registered', () => {
+      expect(kernel.hasFiscalPrinterPlugin()).toBe(false)
+    })
+
+    it('should return true after registering a plugin (even without instance)', () => {
+      kernel.registerFiscalPrinter('fiscal-bixolon')
+      expect(kernel.hasFiscalPrinterPlugin()).toBe(true)
+    })
+
+    it('should return false after unregistering', () => {
+      kernel.registerFiscalPrinter('fiscal-bixolon')
+      expect(kernel.hasFiscalPrinterPlugin()).toBe(true)
+      kernel.unregisterFiscalPrinter('fiscal-bixolon')
+      expect(kernel.hasFiscalPrinterPlugin()).toBe(false)
+    })
+  })
 })

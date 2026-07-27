@@ -24,6 +24,8 @@ const PRINTER_TYPES = [
 
 const ERROR_MESSAGES: Record<string, string> = {
   PRINTER_NOT_FOUND: 'Impresora no encontrada',
+  PLUGIN_NOT_AVAILABLE: 'Plugin fiscal no instalado',
+  PLUGIN_NOT_ACTIVE: 'Plugin fiscal no activo',
   LICENSE_REQUIRED: 'Se requiere licencia',
   PRINT_FAILED: 'Error de impresión',
   PAPER_OUT: 'Sin papel',
