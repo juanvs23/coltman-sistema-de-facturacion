@@ -11,6 +11,7 @@ import type { AppKernel } from '../core/kernel/AppKernel'
 import type { LicenseManager } from '../core/license/LicenseManager'
 import type { UiRegistryState } from '@shared/types'
 import type { IFiscalPrinter, ReceiptData } from '@plugin-api/contracts/IFiscalPrinter'
+import type { IBasicPrinter } from '@plugin-api/contracts/IBasicPrinter'
 import type { PluginResult } from '@plugin-api/types'
 import { guard, AuthError, validatePassword, invalidatePermissionCache } from './guards'
 import { sessionManager } from './SessionManager'
@@ -47,9 +48,6 @@ async function checkFiscalLicense(licenseManager: LicenseManager): Promise<Plugi
 }
 
 function getFiscalPrinterOrReject(kernel: AppKernel): { printer: IFiscalPrinter } | { error: PluginResult } {
-  if (!kernel.hasFiscalPrinterPlugin()) {
-    return { error: { success: false, error: 'PLUGIN_NOT_AVAILABLE' } }
-  }
   const printer = kernel.getFiscalPrinter()
   if (!printer) {
     return { error: { success: false, error: 'PLUGIN_NOT_ACTIVE' } }
@@ -57,17 +55,57 @@ function getFiscalPrinterOrReject(kernel: AppKernel): { printer: IFiscalPrinter 
   return { printer }
 }
 
+function getBasicPrinterOrReject(kernel: AppKernel): { printer: IBasicPrinter } | { error: PluginResult } {
+  if (!kernel.hasBasicPrinterPlugin()) {
+    return { error: { success: false, error: 'PLUGIN_NOT_AVAILABLE' } }
+  }
+  const printer = kernel.getBasicPrinter()
+  if (!printer) {
+    return { error: { success: false, error: 'PLUGIN_NOT_ACTIVE' } }
+  }
+  return { printer }
+}
+
+/**
+ * Fallback chain for printer resolution:
+ * 1. Fiscal printer registered AND licensed → use fiscal
+ * 2. Otherwise → try basic printer (no license check)
+ * 3. Otherwise → PLUGIN_NOT_AVAILABLE
+ */
+async function resolveFiscalPrinter(
+  kernel: AppKernel,
+  licenseManager: LicenseManager,
+): Promise<{ printer: IFiscalPrinter } | { error: PluginResult }> {
+  if (!kernel.hasFiscalPrinterPlugin()) {
+    return { error: { success: false, error: 'FISCAL_NOT_REGISTERED' } }
+  }
+
+  const licenseError = await checkFiscalLicense(licenseManager)
+  if (licenseError) {
+    return { error: licenseError }
+  }
+
+  return getFiscalPrinterOrReject(kernel)
+}
+
 export async function handlePrinterTest(
   kernel: AppKernel,
   licenseManager: LicenseManager,
 ): Promise<PluginResult> {
-  const licenseError = await checkFiscalLicense(licenseManager)
-  if (licenseError) return licenseError
+  // 1. Try fiscal printer (only if registered)
+  const fiscalResolved = await resolveFiscalPrinter(kernel, licenseManager)
+  if (!('error' in fiscalResolved)) {
+    return await fiscalResolved.printer.testConnection()
+  }
 
-  const resolved = getFiscalPrinterOrReject(kernel)
-  if ('error' in resolved) return resolved.error
+  // 2. Fallback: try basic printer
+  const basicResolved = getBasicPrinterOrReject(kernel)
+  if (!('error' in basicResolved)) {
+    return await basicResolved.printer.testConnection()
+  }
 
-  return await resolved.printer.testConnection()
+  // 3. No printer available
+  return { success: false, error: 'PLUGIN_NOT_AVAILABLE' }
 }
 
 export async function handlePrintReceipt(
@@ -75,51 +113,84 @@ export async function handlePrintReceipt(
   licenseManager: LicenseManager,
   data: ReceiptData,
 ): Promise<PluginResult> {
-  const licenseError = await checkFiscalLicense(licenseManager)
-  if (licenseError) return licenseError
-
-  const resolved = getFiscalPrinterOrReject(kernel)
-  if ('error' in resolved) return resolved.error
-
-  try {
-    return await resolved.printer.printReceipt(data)
-  } catch {
-    return { success: false, error: 'PRINT_FAILED' }
+  // 1. Try fiscal printer (only if registered)
+  const fiscalResolved = await resolveFiscalPrinter(kernel, licenseManager)
+  if (!('error' in fiscalResolved)) {
+    try {
+      return await fiscalResolved.printer.printReceipt(data)
+    } catch {
+      return { success: false, error: 'PRINT_FAILED' }
+    }
   }
+
+  // 2. Fallback: try basic printer
+  const basicResolved = getBasicPrinterOrReject(kernel)
+  if (!('error' in basicResolved)) {
+    try {
+      return await basicResolved.printer.printReceipt(data)
+    } catch {
+      return { success: false, error: 'PRINT_FAILED' }
+    }
+  }
+
+  // 3. No printer available
+  return { success: false, error: 'PLUGIN_NOT_AVAILABLE' }
 }
 
 export async function handlePrinterStatus(
   kernel: AppKernel,
   licenseManager: LicenseManager,
 ): Promise<PluginResult<{ online: boolean; paperOut: boolean; drawerOpen: boolean }>> {
-  const licenseError = await checkFiscalLicense(licenseManager)
-  if (licenseError) return licenseError
-
-  const resolved = getFiscalPrinterOrReject(kernel)
-  if ('error' in resolved) return resolved.error
-
-  try {
-    return await resolved.printer.getStatus()
-  } catch {
-    return { success: false, error: 'PRINTER_NOT_FOUND' }
+  // 1. Try fiscal printer (only if registered)
+  const fiscalResolved = await resolveFiscalPrinter(kernel, licenseManager)
+  if (!('error' in fiscalResolved)) {
+    try {
+      return await fiscalResolved.printer.getStatus()
+    } catch {
+      return { success: false, error: 'PRINTER_NOT_FOUND' }
+    }
   }
+
+  // 2. Fallback: try basic printer
+  const basicResolved = getBasicPrinterOrReject(kernel)
+  if (!('error' in basicResolved)) {
+    try {
+      return await basicResolved.printer.getStatus()
+    } catch {
+      return { success: false, error: 'PRINTER_NOT_FOUND' }
+    }
+  }
+
+  // 3. No printer available
+  return { success: false, error: 'PLUGIN_NOT_AVAILABLE' }
 }
 
 export async function handleOpenDrawer(
   kernel: AppKernel,
   licenseManager: LicenseManager,
 ): Promise<PluginResult> {
-  const licenseError = await checkFiscalLicense(licenseManager)
-  if (licenseError) return licenseError
-
-  const resolved = getFiscalPrinterOrReject(kernel)
-  if ('error' in resolved) return resolved.error
-
-  try {
-    return await resolved.printer.openDrawer()
-  } catch {
-    return { success: false, error: 'PRINTER_NOT_FOUND' }
+  // 1. Try fiscal printer (only if registered)
+  const fiscalResolved = await resolveFiscalPrinter(kernel, licenseManager)
+  if (!('error' in fiscalResolved)) {
+    try {
+      return await fiscalResolved.printer.openDrawer()
+    } catch {
+      return { success: false, error: 'PRINTER_NOT_FOUND' }
+    }
   }
+
+  // 2. Fallback: try basic printer
+  const basicResolved = getBasicPrinterOrReject(kernel)
+  if (!('error' in basicResolved)) {
+    try {
+      return await basicResolved.printer.openDrawer()
+    } catch {
+      return { success: false, error: 'PRINTER_NOT_FOUND' }
+    }
+  }
+
+  // 3. No printer available
+  return { success: false, error: 'PLUGIN_NOT_AVAILABLE' }
 }
 
 export async function handleCheckPrinterLicense(
