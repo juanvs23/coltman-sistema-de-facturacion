@@ -1,6 +1,52 @@
 # Changelog
 
-## [0.11.0] - 2026-07-21
+## [0.13.0] - 2026-07-27
+
+### Added
+- **IFiscalPrinter contract**: printInvoice(), testConnection(), openDrawer(), getStatus(), printDailyReport?(), FiscalPrinterErrorCode (PLUGIN_NOT_AVAILABLE, PLUGIN_NOT_ACTIVE, PRINTER_NOT_FOUND, PAPER_OUT, PRINT_FAILED, LICENSE_REQUIRED)
+- **AppKernel**: registerFiscalPrinter, getFiscalPrinter, hasFiscalPrinterPlugin (mismo patrón que country plugin)
+- **PluginLoader**: tryRegisterFiscalPrinter + isFiscalPrinterPlugin duck-typing
+- **IPC handlers**: printer:test, printer:print, printer:status, printer:open-drawer, printer:check-license con license-gating
+- **FiscalTab UI**: botón "Probar conexión" (idle/testing/success/error), indicador de estado (online/offline/papel/cajón), toggle desactivado sin licencia
+- **IBasicPrinter contract**: gratuito (MIT), 4 métodos sin fiscal compliance
+- **BasicPrinterPlugin**: built-in, TCP a localhost:9100, ESC/POS formatter puro
+- **IPC fallback**: fiscal (licenciado) → básico (gratis) → PLUGIN_NOT_AVAILABLE
+- **ReceiptConfirm**: botón Imprimir con datos del negocio desde CompanyConfig
+- **Emulador**: escpos-emulator Docker (localhost:9100 TCP, :3000 Web UI)
+- **isBasicPrinterPlugin**: duck-typing que distingue básico de fiscal por ausencia de printInvoice
+
+### Changed
+- ReceiptConfirm: buildReceiptData() arma recibo completo con header (businessName, taxId, address, phone)
+- checkFiscalLicense ahora es condicional — solo se ejecuta si hay plugin fiscal registrado
+- Eliminado IPrinterPort.ts (reemplazado por IBasicPrinter)
+
+### Tests
+- 251 tests (31 files) — 0 regresiones
+
+---
+
+## [0.12.0] - 2026-07-27
+
+### Added
+- **Presupuestos**: modelo Quotation con CRUD completo, conversión a factura, UI en POS y listado
+- **Caja multi-turno**: navegación por fecha, tabs de turnos, validación backend (una caja abierta a la vez)
+- **ShiftConfig**: turnos configurables por nombre, días y horario desde Settings
+- **InvoiceDocument**: factura congelada con 40+ campos, multi-moneda, plugin-ready
+- **Customer.personType**: V/E/J/G/P con subtipos y legalType para jurídicas
+- **PaymentEntry.bank**: selector de 16 bancos venezolanos
+- **PaymentModal**: creación de cliente inline, motivo, notas, conversión DIVISA automática
+- **useActiveCashRegister**: hook reactivo para validar caja abierta antes de cobrar
+- **fmtErr()**: todos los handlers IPC muestran error real, no mensajes genéricos
+- **DataModelRegistry.migrate()**: ahora ejecuta prisma db push real con schema combinado
+
+### Fixes
+- CashRegisterPage: auto-navega a la fecha del turno activo
+- Botón "Cerrar turno" visible sin restricción isToday
+
+### Tests
+- 193 tests (28 files)
+
+---
 
 ### Added
 - **Plugin Kernel Architecture**: AppKernel singleton con 4 registries (PluginRegistry, HookBus, UiRegistry, DataModelRegistry)

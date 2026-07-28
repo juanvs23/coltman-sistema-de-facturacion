@@ -104,9 +104,9 @@ Based on Cal.com design tokens (via getdesign.md) with these adaptations:
 
 | Field | Value |
 |---|---|
-| **Version** | v0.12.0 |
+| **Version** | v0.13.0 |
 | **Branch** | `dev` |
-| **Tests** | 148+4 flaky (25 files) |
+| **Tests** | 251 (31 files) |
 | **Fase 1** | ✅ MVP Core completa |
 | **Plugin Kernel Architecture** | ✅ PR 1/2/3 completados |
 | **Fase 2** | ✅ Cabos sueltos completa |
@@ -115,7 +115,11 @@ Based on Cal.com design tokens (via getdesign.md) with these adaptations:
 | **InvoiceDocument** | ✅ Factura congelada con 40+ campos, multi-moneda, plugin-ready |
 | **Personas VE** | ✅ Tipos V/E/J/G/P con subtipos y legalType para jurídicas |
 | **PaymentEntry.bank** | ✅ Banco de origen para tarjetas y transferencias |
-| **Fase 3** | ⬜ Monetización (Producto) — pendiente |
+| **Fiscal Printer (API)** | ✅ Contrato IFiscalPrinter completo + IPC handlers + FiscalTab UI |
+| **Fiscal Printer (Plugin)** | ⬜ Plugin privado con adapters ESC/POS por marca (repo externo) |
+| **Basic Printer** | ✅ Plugin built-in gratuito (IBasicPrinter + TCP + fallback) |
+| **Emulador ESC/POS** | ✅ Docker (escpos-emulator en localhost:9100/3000) |
+| **Fase 3 — Monetización** | 🔄 En progreso |
 | **Fase 4** | ⬜ Lanzamiento — pendiente |
 
 Ver `docs/ROADMAP.md` para detalle de fases, estimaciones y dependencias.
