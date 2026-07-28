@@ -5,6 +5,7 @@ import type { IPlugin } from '@plugin-api/contracts/IPlugin'
 import type { PluginInfo, PluginResult, PluginManifest } from '@plugin-api/types'
 import type { ICountryPlugin } from '@plugin-api/contracts/ICountryPlugin'
 import { isFiscalPrinterPlugin } from './isFiscalPrinterPlugin'
+import { isBasicPrinterPlugin } from './isBasicPrinterPlugin'
 import { loadPluginManifest } from './PluginManifest'
 import { PluginStateStore } from './PluginStateStore'
 import type { LicenseManager } from '../core/license/LicenseManager'
@@ -84,6 +85,9 @@ export class PluginLoader {
 
           // Detect fiscal printer plugins via duck-typing
           this.tryRegisterFiscalPrinter(plugin)
+
+          // Detect basic printer plugins via duck-typing
+          this.tryRegisterBasicPrinter(plugin)
         } else {
           console.warn(`Plugin "${id}" failed to activate: ${result.error}`)
         }
@@ -161,6 +165,7 @@ export class PluginLoader {
       this.kernel.pluginRegistryInternal.activate(manifest.id)
       this.tryRegisterCountryPlugin(plugin)
       this.tryRegisterFiscalPrinter(plugin)
+      this.tryRegisterBasicPrinter(plugin)
 
       return {
         success: true,
@@ -209,6 +214,7 @@ export class PluginLoader {
         this.kernel.pluginRegistryInternal.activate(id)
         this.tryRegisterCountryPlugin(plugin)
         this.tryRegisterFiscalPrinter(plugin)
+        this.tryRegisterBasicPrinter(plugin)
       } catch {
         this.stateStore.save(id, { ...entry, active: false })
         return { success: false, error: 'Error al activar el plugin' }
@@ -218,6 +224,7 @@ export class PluginLoader {
       this.kernel.pluginRegistryInternal.deactivate(id)
       this.kernel.unregisterCountryPlugin(id)
       this.kernel.unregisterFiscalPrinter(id)
+      this.kernel.unregisterBasicPrinter(id)
     }
     return { success: true, data: { active: entry.active } }
   }
@@ -265,6 +272,24 @@ export class PluginLoader {
       this.kernel.registerFiscalPrinterInstance(plugin.manifest.id, plugin)
       console.log(
         `[PluginLoader] Registered fiscal printer plugin "${plugin.manifest.id}" (${plugin.type})`
+      )
+    }
+  }
+
+  /**
+   * Check if a plugin instance implements IBasicPrinter via duck-typing
+   * and register it with the kernel if it does.
+   *
+   * Detection is based on isBasicPrinterPlugin() which checks for:
+   *   - `testConnection`, `printReceipt`, `getStatus`, `openDrawer` methods
+   *   - Absence of `printInvoice` (fiscal exclusion)
+   */
+  private tryRegisterBasicPrinter(plugin: IPlugin): void {
+    if (isBasicPrinterPlugin(plugin)) {
+      this.kernel.registerBasicPrinter(plugin.manifest.id)
+      this.kernel.registerBasicPrinterInstance(plugin.manifest.id, plugin)
+      console.log(
+        `[PluginLoader] Registered basic printer plugin "${plugin.manifest.id}"`
       )
     }
   }

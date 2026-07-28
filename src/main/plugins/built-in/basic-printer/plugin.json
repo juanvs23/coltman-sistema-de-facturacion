@@ -1,0 +1,11 @@
+{
+  "id": "basic-printer",
+  "name": "Basic Printer (ESC/POS)",
+  "version": "1.0.0",
+  "description": "Built-in non-fiscal printer plugin. Prints receipts via ESC/POS to a TCP-connected thermal printer on localhost:9100. Free tier — no license required.",
+  "author": "Sistema de Facturación",
+  "visibility": "free",
+  "target": "main",
+  "hooks": [],
+  "requiresLicense": false
+}

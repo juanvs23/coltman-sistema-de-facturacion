@@ -4,6 +4,7 @@ import { PluginRegistry } from '../PluginRegistry'
 import { HookBus } from '../HookBus'
 import type { PluginManifest, PluginResult } from '@plugin-api/types'
 import type { IFiscalPrinter, FiscalPrinterType, ReceiptData } from '@plugin-api/contracts/IFiscalPrinter'
+import type { IBasicPrinter } from '@plugin-api/contracts/IBasicPrinter'
 
 const mockManifest: PluginManifest = {
   id: 'test-plugin',
@@ -200,6 +201,74 @@ describe('AppKernel', () => {
       expect(kernel.hasFiscalPrinterPlugin()).toBe(true)
       kernel.unregisterFiscalPrinter('fiscal-bixolon')
       expect(kernel.hasFiscalPrinterPlugin()).toBe(false)
+    })
+  })
+
+  describe('registerBasicPrinter / getBasicPrinter', () => {
+    const mockBasicPrinter: IBasicPrinter = {
+      type: 'basic-printer',
+      displayName: 'Basic Printer (ESC/POS)',
+      testConnection: vi.fn().mockResolvedValue({ success: true }),
+      printReceipt: vi.fn().mockResolvedValue({ success: true }),
+      openDrawer: vi.fn().mockResolvedValue({ success: true }),
+      getStatus: vi.fn().mockResolvedValue({
+        success: true,
+        data: { online: true, paperOut: false, drawerOpen: false }
+      })
+    }
+
+    it('should return null when no basic printer is registered', () => {
+      const result = kernel.getBasicPrinter()
+      expect(result).toBeNull()
+    })
+
+    it('should return the registered basic printer instance', () => {
+      kernel.registerBasicPrinter('basic-printer')
+      kernel.registerBasicPrinterInstance('basic-printer', mockBasicPrinter)
+
+      const result = kernel.getBasicPrinter()
+      expect(result).not.toBeNull()
+      expect(result!.type).toBe('basic-printer')
+      expect(result!.displayName).toBe('Basic Printer (ESC/POS)')
+    })
+
+    it('should return null after unregistering the basic printer', () => {
+      kernel.registerBasicPrinter('basic-printer')
+      kernel.registerBasicPrinterInstance('basic-printer', mockBasicPrinter)
+
+      expect(kernel.getBasicPrinter()).not.toBeNull()
+
+      kernel.unregisterBasicPrinter('basic-printer')
+
+      const result = kernel.getBasicPrinter()
+      expect(result).toBeNull()
+    })
+
+    it('should not register an instance if the plugin id does not match', () => {
+      kernel.registerBasicPrinter('basic-printer')
+      // Try to register instance with a different id
+      kernel.registerBasicPrinterInstance('other-printer', mockBasicPrinter)
+
+      const result = kernel.getBasicPrinter()
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('hasBasicPrinterPlugin', () => {
+    it('should return false when no plugin is registered', () => {
+      expect(kernel.hasBasicPrinterPlugin()).toBe(false)
+    })
+
+    it('should return true after registering a plugin (even without instance)', () => {
+      kernel.registerBasicPrinter('basic-printer')
+      expect(kernel.hasBasicPrinterPlugin()).toBe(true)
+    })
+
+    it('should return false after unregistering', () => {
+      kernel.registerBasicPrinter('basic-printer')
+      expect(kernel.hasBasicPrinterPlugin()).toBe(true)
+      kernel.unregisterBasicPrinter('basic-printer')
+      expect(kernel.hasBasicPrinterPlugin()).toBe(false)
     })
   })
 })

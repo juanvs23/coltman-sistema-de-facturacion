@@ -41,6 +41,7 @@ import type { IPluginUI } from '@plugin-api/contracts/IPluginUI'
 import type { IPluginDataModel } from '@plugin-api/contracts/IPluginDataModel'
 import type { ICountryPlugin } from '@plugin-api/contracts/ICountryPlugin'
 import type { IFiscalPrinter } from '@plugin-api/contracts/IFiscalPrinter'
+import type { IBasicPrinter } from '@plugin-api/contracts/IBasicPrinter'
 
 /**
  * Singleton kernel that orchestrates the plugin system.
@@ -77,6 +78,12 @@ export class AppKernel implements IPluginKernel {
 
   /** Currently registered fiscal printer instance */
   private _fiscalPrinterInstance: IFiscalPrinter | null = null
+
+  /** Currently registered basic printer plugin id (only one at a time) */
+  private _basicPrinterPluginId: string | null = null
+
+  /** Currently registered basic printer instance */
+  private _basicPrinterInstance: IBasicPrinter | null = null
 
   // ─── IPluginKernel accessors ───────────────────────────────
 
@@ -249,6 +256,62 @@ export class AppKernel implements IPluginKernel {
    */
   hasFiscalPrinterPlugin(): boolean {
     return this._fiscalPrinterPluginId !== null
+  }
+
+  // ─── Basic Printer Resolution ─────────────────────────────
+
+  /**
+   * Register a plugin as the basic printer handler.
+   * Only one basic printer can be registered at a time.
+   * Called by PluginLoader when it discovers a basic printer plugin.
+   *
+   * @param pluginId - The plugin's manifest id (e.g. "basic-printer")
+   */
+  registerBasicPrinter(pluginId: string): void {
+    this._basicPrinterPluginId = pluginId
+  }
+
+  /**
+   * Store a basic printer instance for direct access.
+   * Called by PluginLoader after instantiating the plugin.
+   * Only stores if the pluginId matches the currently registered basic printer.
+   */
+  registerBasicPrinterInstance(pluginId: string, instance: IBasicPrinter): void {
+    if (this._basicPrinterPluginId === pluginId) {
+      this._basicPrinterInstance = instance
+    }
+  }
+
+  /**
+   * Unregister the basic printer plugin, clearing instance.
+   * Called by PluginLoader when a plugin is deactivated.
+   */
+  unregisterBasicPrinter(pluginId: string): void {
+    if (this._basicPrinterPluginId === pluginId) {
+      this._basicPrinterPluginId = null
+      this._basicPrinterInstance = null
+    }
+  }
+
+  /**
+   * Get the active basic printer plugin synchronously.
+   * Returns null if no basic printer is registered.
+   *
+   * Unlike getCountryPlugin(), this is synchronous because
+   * there is no DB lookup needed — the plugin is either
+   * registered or not.
+   */
+  getBasicPrinter(): IBasicPrinter | null {
+    return this._basicPrinterInstance
+  }
+
+  /**
+   * Check if a basic printer plugin has been registered
+   * (regardless of whether its instance is active).
+   * Used to distinguish PLUGIN_NOT_AVAILABLE from PLUGIN_NOT_ACTIVE.
+   */
+  hasBasicPrinterPlugin(): boolean {
+    return this._basicPrinterPluginId !== null
   }
 
   /**
