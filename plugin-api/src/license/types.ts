@@ -76,5 +76,13 @@ export const BUILT_IN_FEATURES: Record<string, FeatureDefinition> = {
     requiresLicense: true,
     pluginId: 'multi-terminal',
     tier: 'enterprise'
+  },
+  'basic-printer': {
+    key: 'basic-printer',
+    name: 'Impresora Básica',
+    description: 'Impresión no fiscal para recibos y tickets (ESC/POS, TCP)',
+    requiresLicense: false,
+    pluginId: 'basic-printer',
+    tier: 'free'
   }
 }

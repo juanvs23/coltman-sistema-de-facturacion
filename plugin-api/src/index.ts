@@ -53,6 +53,9 @@ export type {
   ReceiptData
 } from './contracts/IFiscalPrinter'
 
+// ─── Basic Printer ────────────────────────────────────────────
+export type { IBasicPrinter } from './contracts/IBasicPrinter'
+
 // ─── USD Rate ─────────────────────────────────────────────────
 export type {
   IUsdRateProvider,
